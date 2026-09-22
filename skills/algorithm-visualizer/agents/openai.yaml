@@ -1,0 +1,4 @@
+interface:
+  display_name: "Algorithm Visualizer"
+  short_description: "Create interview algorithm demos with visible invariants"
+  default_prompt: "Use $algorithm-visualizer to turn this algorithm into a small interactive interview demo."

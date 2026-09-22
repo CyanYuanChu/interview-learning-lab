@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hot100 Recall"
+  short_description: "Generate interview recall drills and weakness reviews"
+  default_prompt: "Use $hot100-recall to turn this algorithm note into an interview recall drill."

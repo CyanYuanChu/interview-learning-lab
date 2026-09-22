@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repository Structure Audit"
+  short_description: "Audit repository boundaries and discoverable entrypoints"
+  default_prompt: "Use $repository-structure-audit to review this repository and report the smallest safe structural fixes."
