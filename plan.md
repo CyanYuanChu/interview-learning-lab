@@ -1,9 +1,8 @@
 # Interview Learning Lab 项目结构计划
 
 > 状态：Phase 0 已完成，Phase 1 待执行
-> 项目根目录：`/Users/cyan/workspace/Interview`
-> 日期：2026-09-22
-> 本阶段范围：建立结构设计、完成本地项目初始化，并清理已确认的临时文件；有价值的学习内容暂不移动、不改写。
+> 项目根目录：`Interview/`
+> 本计划范围：定义仓库结构、内容边界、skills 组织方式、迁移顺序和验收标准。
 
 ## 1. 项目定位
 
@@ -11,49 +10,33 @@
 
 - 算法与数据结构学习笔记；
 - Java / C++ / Python 三语言对照模板；
-- 可在浏览器中运行的交互式演示；Typora 集成作为未来可选扩展；
+- 可在浏览器中运行的交互式演示；
 - 可复用的 Agent Skills 及其参考资料、模板和脚本；
 - 外部资料索引与来源说明；
 - 后续可独立运行的学习应用；
 - 项目级规划、验证和贡献规范。
 
-项目暂定名为 **Interview Learning Lab**。根目录仍沿用当前的 `Interview`，暂不新建第二层项目目录。
+项目名为 **Interview Learning Lab**，仓库根目录直接承载项目内容。
 
-## 2. 当前目录盘点（已验证）
+## 2. 当前项目基础
 
-当前根目录已经有 `README.md`、`.gitignore`，本地 Git 仓库已初始化为 `main` 分支并完成首个提交；公开 GitHub 远程仓库也已创建并推送。学习内容仍暂时保留在根目录。现有内容是三种东西混合在一起：
+仓库已完成基础初始化，现有学习内容暂时保留在根目录，后续按迁移阶段归档。
 
 | 当前路径 | 当前角色 | 计划中的归类 |
 |---|---|---|
 | `README.md` | 项目入口和当前状态说明 | 保留在根目录 |
 | `.gitignore` | 忽略 macOS 元数据、构建产物和本地环境 | 保留在根目录 |
-| `.git/` | 本地 Git 历史和分支元数据 | 保留，不提交其内部文件 |
 | `hot100_binary_tree.md` | 二叉树题型框架和递归模板 | `notes/algorithms/trees/hot100-binary-tree.md` |
 | `hot100_binary_tree_quiz.html` | 可运行的二叉树主动回忆测验 | `apps/hot100-binary-tree-quiz/index.html` |
-| `hot100_review.md`、`hot100_3lang_templates.md`、`path-sum-count-bug.html` | 已按用户要求移入废纸篓 | 不纳入当前项目结构 |
-| `path-sum-http.md`、`typora-iframe-test.md` | 已确认是旧的 Typora/HTTP 测试入口，已移入废纸篓 | 不再作为当前项目内容 |
-| `typora-embed-demo/*` | 已被用户删除，当前 checkout 中不存在 | 不恢复，不纳入当前项目结构 |
 | `.specify/*` | Spec Kit 的项目工具、模板和脚本 | 保留，归入“项目工具层”，不当作学习资料 |
 | `.agents/skills/*`、`.claude/skills/*` | 当前 Spec Kit 集成产生的 skill 运行时文件 | 保留，后续与项目自有 skills 分开管理 |
-| `.DS_Store` | macOS 工作区元数据，已移入废纸篓 | 通过 `.gitignore` 防止再次进入项目 |
 
-### 2.1 已执行的安全清理（2026-09-22）
+### 2.1 仓库状态
 
-- 将根目录的 `.DS_Store` 移入 macOS 废纸篓；
-- 将 `path-sum-http.md` 移入废纸篓：它依赖已经删除的 Typora demo 入口；
-- 将 `typora-iframe-test.md` 移入废纸篓：它指向外部 Codex 会话产物，不属于当前项目内容；
-- 保留 `hot100_binary_tree.md` 和 `hot100_binary_tree_quiz.html`，它们仍是当前有效学习内容；
-- 按用户要求移除 `hot100_review.md`、`hot100_3lang_templates.md` 和 `path-sum-count-bug.html`，文件仍可从 macOS 废纸篓恢复。
-
-### 2.2 GitHub 初始化状态
-
-- GitHub 账号已确认：`CyanYuanChu`；
 - 公开远程仓库已创建：[CyanYuanChu/interview-learning-lab](https://github.com/CyanYuanChu/interview-learning-lab)；
 - 本地 Git 使用 `main` 作为默认分支，首个初始化提交已完成；
 - `origin` 已指向上述仓库，且本地 `main` 已推送并跟踪 `origin/main`；
 - 不使用 GitHub 自动生成 README，避免与当前本地 README 冲突。
-
-当前目录中没有 `hot100-site/`。历史工作记录提到过独立的 Hot 100 Web 应用，但它不在本次实际盘点到的 checkout 中；本计划不凭空创建或迁移它。若日后恢复，应作为 `apps/hot100-site/` 独立子项目接入，并单独补充 README、环境变量和部署说明。
 
 ## 3. 设计原则
 
@@ -110,7 +93,7 @@ Interview/
 ├── README.md                         # [README] 项目总入口、导航、快速开始
 ├── plan.md                           # [PLAN] 本仓库级结构蓝图（当前文件）
 ├── CONTRIBUTING.md                   # [DOC] 如何新增笔记、reference、skill、demo
-├── LICENSE                           # [META] 待确认：个人代码与外部资料的许可策略
+├── LICENSE                           # [META] 明确许可策略后添加
 ├── .gitignore                        # [META] 忽略 .DS_Store、构建产物、密钥和本地状态
 │
 ├── docs/                             # [DOCS] 项目级说明，不承载题目正文
@@ -275,7 +258,6 @@ Interview/
 - [x] 创建公开 GitHub 个人仓库，设置 `origin` 并推送首个提交；
 - [x] 创建 `.gitignore`，至少忽略 `.DS_Store`、构建产物、本地服务状态、环境变量和密钥；
 - [x] 明确 `.specify/`、`.agents/`、`.claude/` 是工具层，不与学习资料混排；
-- [x] 不把历史上不在当前 checkout 的应用当成本阶段输入。
 
 ### Phase 1：创建入口文档和分类索引
 
@@ -321,11 +303,8 @@ Interview/
 - 不提交 `.DS_Store`、密钥、本地环境变量和构建产物；
 - 后续功能规划使用 `specs/<feature-id>/`，不把功能 plan 和本仓库级 `plan.md` 混为一谈。
 
-## 8. 本阶段不做的事
+## 8. 项目边界
 
-- 不把已经完成的 Phase 0 初始化工作重复执行；
-- 不再重复清理已经移入废纸篓的旧 Typora 文件；
-- 不恢复当前目录中不存在的 `hot100-site`；
 - 不把外部 GitHub skill 或文章整包复制进项目；
 - 不新增 Web 后端、数据库、登录、部署或模型 API；
 - 不把一次性的个人复盘内容直接提升为通用 skill。
@@ -342,7 +321,7 @@ Interview/
 
 ## 10. 后续执行入口
 
-本文件确认后，下一步按以下顺序执行：
+下一阶段按以下顺序执行：
 
 1. 创建五个一级目录 README；
 2. 迁移现有文件并验证链接；
