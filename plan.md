@@ -1,6 +1,6 @@
 # Interview Learning Lab 项目结构计划
 
-> 状态：Draft，等待确认后执行
+> 状态：Phase 0 已完成，Phase 1 待执行
 > 项目根目录：`/Users/cyan/workspace/Interview`
 > 日期：2026-09-22
 > 本阶段范围：建立结构设计、完成本地项目初始化，并清理已确认的临时文件；有价值的学习内容暂不移动、不改写。
@@ -21,7 +21,7 @@
 
 ## 2. 当前目录盘点（已验证）
 
-当前根目录已经有 `README.md`、`.gitignore`，本地 Git 仓库也已经初始化为 `main` 分支但尚无提交；学习内容仍暂时保留在根目录。现有内容是三种东西混合在一起：
+当前根目录已经有 `README.md`、`.gitignore`，本地 Git 仓库已初始化为 `main` 分支并完成首个提交；公开 GitHub 远程仓库也已创建并推送。学习内容仍暂时保留在根目录。现有内容是三种东西混合在一起：
 
 | 当前路径 | 当前角色 | 计划中的归类 |
 |---|---|---|
@@ -48,10 +48,9 @@
 ### 2.2 GitHub 初始化状态
 
 - GitHub 账号已确认：`CyanYuanChu`；
-- 本地 Git 已初始化，使用 `main` 作为默认分支，当前尚无提交；
-- 提交身份尚未配置，不会擅自写入或公开个人邮箱；
-- 远程仓库名称、可见性和是否创建 GitHub README 等待用户确认；
-- 远程创建后设置 `origin`，完成首个提交并推送；
+- 公开远程仓库已创建：[CyanYuanChu/interview-learning-lab](https://github.com/CyanYuanChu/interview-learning-lab)；
+- 本地 Git 使用 `main` 作为默认分支，首个初始化提交已完成；
+- `origin` 已指向上述仓库，且本地 `main` 已推送并跟踪 `origin/main`；
 - 不使用 GitHub 自动生成 README，避免与当前本地 README 冲突。
 
 当前目录中没有 `hot100-site/`。历史工作记录提到过独立的 Hot 100 Web 应用，但它不在本次实际盘点到的 checkout 中；本计划不凭空创建或迁移它。若日后恢复，应作为 `apps/hot100-site/` 独立子项目接入，并单独补充 README、环境变量和部署说明。
@@ -271,12 +270,12 @@ Interview/
 
 ### Phase 0：确认边界与仓库基础设施
 
-- 确认项目名、是否公开、许可证策略；
-- 初始化本地 Git 仓库，使用 `main` 分支并创建首个初始化提交；
-- 创建 GitHub 个人仓库，设置 `origin` 并推送首个提交；
-- 创建 `.gitignore`，至少忽略 `.DS_Store`、构建产物、本地服务状态、环境变量和密钥；
-- 明确 `.specify/`、`.agents/`、`.claude/` 是工具层，不与学习资料混排；
-- 不把历史上不在当前 checkout 的应用当成本阶段输入。
+- [x] 确认项目名、公开属性和当前许可证策略边界；
+- [x] 初始化本地 Git 仓库，使用 `main` 分支并创建首个初始化提交；
+- [x] 创建公开 GitHub 个人仓库，设置 `origin` 并推送首个提交；
+- [x] 创建 `.gitignore`，至少忽略 `.DS_Store`、构建产物、本地服务状态、环境变量和密钥；
+- [x] 明确 `.specify/`、`.agents/`、`.claude/` 是工具层，不与学习资料混排；
+- [x] 不把历史上不在当前 checkout 的应用当成本阶段输入。
 
 ### Phase 1：创建入口文档和分类索引
 
@@ -324,7 +323,7 @@ Interview/
 
 ## 8. 本阶段不做的事
 
-- 不在没有确认仓库名和可见性前创建 GitHub 远程仓库；
+- 不把已经完成的 Phase 0 初始化工作重复执行；
 - 不再重复清理已经移入废纸篓的旧 Typora 文件；
 - 不恢复当前目录中不存在的 `hot100-site`；
 - 不把外部 GitHub skill 或文章整包复制进项目；
@@ -345,12 +344,10 @@ Interview/
 
 本文件确认后，下一步按以下顺序执行：
 
-1. 确认 GitHub 仓库名、公开/私有属性和许可证策略；
-2. 初始化本地 Git，创建首个提交并推送到 `origin`；
-3. 创建五个一级目录 README；
-4. 迁移现有文件并验证链接；
-5. 创建第一批 skills；
-6. 做一次结构审计和真实 demo smoke check；
-7. 再决定是否接入 CI。
+1. 创建五个一级目录 README；
+2. 迁移现有文件并验证链接；
+3. 创建第一批 skills；
+4. 做一次结构审计和真实 demo smoke check；
+5. 再决定是否接入 CI。
 
 本文件是仓库级结构计划。未来使用 Spec Kit 规划具体功能时，仍应为每个功能单独创建 `specs/<feature-id>/spec.md` 和 `specs/<feature-id>/plan.md`。

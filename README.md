@@ -13,7 +13,8 @@
 - 保留二叉树学习笔记和主动回忆测验；
 - 按要求移除 Hot 100 总复习稿、三语言模板和路径总和演示；
 - 已初始化本地 Git 仓库，默认分支为 main；
-- GitHub 远程仓库等待仓库名和可见性确认。
+- 已创建公开 GitHub 仓库：[CyanYuanChu/interview-learning-lab](https://github.com/CyanYuanChu/interview-learning-lab)；
+- 本地 `main` 已推送并跟踪 `origin/main`。
 
 ## 现在可以查看的内容
 
@@ -46,4 +47,4 @@ open hot100_binary_tree_quiz.html
 
 ## 规划与后续
 
-先确认 GitHub 仓库名和可见性，再完成初始提交、设置 origin 并推送。之后再按 plan.md 迁移现有内容和实现第一批 skills。
+Phase 0 的本地与 GitHub 初始化已经完成。之后按 [plan.md](plan.md) 进入目录 README、内容迁移和第一批 skills 的实现。
