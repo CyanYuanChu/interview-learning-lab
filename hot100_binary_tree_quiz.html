@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#15131d">
+  <title>Hot 100 二叉树｜主动回忆试卷</title>
+  <style>
+    :root {
+      --bg: #f5f3f8;
+      --surface: #fffdfd;
+      --surface-soft: #f0edf5;
+      --ink: #211d2b;
+      --muted: #746d80;
+      --line: #e5e0eb;
+      --purple: #7357d9;
+      --purple-dark: #4e379e;
+      --purple-soft: #eee9ff;
+      --mint: #2f9b82;
+      --mint-soft: #e4f6ef;
+      --amber: #b87824;
+      --amber-soft: #fff0d8;
+      --rose: #b6506d;
+      --rose-soft: #fff0f4;
+      --shadow: 0 18px 50px rgba(53, 39, 84, .08);
+      --shadow-soft: 0 8px 24px rgba(53, 39, 84, .06);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 11px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 9% 3%, rgba(164, 139, 255, .12), transparent 30rem),
+        radial-gradient(circle at 96% 20%, rgba(108, 207, 176, .12), transparent 26rem),
+        var(--bg);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+
+    button, textarea, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, textarea:focus-visible, input:focus-visible {
+      outline: 3px solid rgba(115, 87, 217, .28);
+      outline-offset: 2px;
+    }
+
+    .page-shell { min-height: 100vh; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 66px;
+      padding: 0 5vw;
+      color: #f8f5ff;
+      background: rgba(21, 19, 29, .94);
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand, .topbar-note, .eyebrow, .question-meta, .tag, .type-pill, .level-pill,
+    .stat-label, .save-meta, .nav-label, .action-kicker {
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 12px; font-weight: 800; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      color: #241b44;
+      background: linear-gradient(145deg, #d4c6ff, #8d75ee);
+      border-radius: 9px;
+      font-weight: 900;
+    }
+    .topbar-note { color: #bcb3ce; font-size: 10px; }
+
+    main { width: min(1240px, 90vw); margin: 0 auto; padding: 64px 0 150px; }
+    .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: end; margin-bottom: 32px; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; color: var(--purple-dark); font-size: 11px; font-weight: 800; }
+    .eyebrow::before { content: ""; width: 31px; height: 2px; background: var(--purple); border-radius: 2px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 720px; margin-bottom: 18px; font-size: clamp(36px, 6vw, 70px); line-height: 1.05; letter-spacing: -.055em; }
+    .hero-copy { max-width: 680px; color: var(--muted); font-size: 16px; }
+    .hero-copy strong { color: var(--ink); }
+    .hero-card {
+      padding: 25px;
+      background: linear-gradient(145deg, #292238, #1c1927);
+      color: #eeeaff;
+      border: 1px solid rgba(255, 255, 255, .09);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+    .hero-card-title { color: #bfb1ee; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
+    .hero-card h2 { margin: 9px 0 13px; font-size: 24px; line-height: 1.2; letter-spacing: -.035em; }
+    .hero-card p { margin-bottom: 0; color: #b8b0c5; font-size: 13px; }
+    .hero-card code { color: #f3d3ff; font-family: var(--mono); font-size: .95em; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 34px; }
+    .stat-card { padding: 17px 19px; background: rgba(255, 253, 253, .75); border: 1px solid var(--line); border-radius: var(--radius-md); }
+    .stat-label { color: var(--muted); font-size: 10px; font-weight: 800; }
+    .stat-value { margin-top: 5px; font-size: 23px; font-weight: 800; letter-spacing: -.04em; }
+    .stat-value small { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0; }
+    .progress-track { height: 7px; margin-top: 10px; overflow: hidden; background: #e5e0eb; border-radius: 99px; }
+    .progress-fill { width: 0; height: 100%; background: linear-gradient(90deg, var(--purple), #a77bff); border-radius: inherit; transition: width .3s ease; }
+
+    .workspace-grid { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 26px; align-items: start; }
+    .sidebar { position: sticky; top: 90px; }
+    .side-card { padding: 18px 14px; background: rgba(255, 253, 253, .75); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-soft); }
+    .nav-label { padding: 0 8px 11px; color: var(--muted); font-size: 10px; font-weight: 800; }
+    .question-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    .nav-button { position: relative; min-height: 33px; padding: 3px; color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 9px; font-size: 11px; font-weight: 800; }
+    .nav-button:hover { color: var(--purple-dark); background: var(--purple-soft); }
+    .nav-button.answered { color: var(--mint); background: var(--mint-soft); border-color: rgba(47, 155, 130, .18); }
+    .nav-button::after { content: ""; position: absolute; right: 5px; bottom: 5px; width: 4px; height: 4px; background: var(--purple); border-radius: 50%; opacity: 0; }
+    .nav-button.answered::after { opacity: 1; background: var(--mint); }
+    .side-tip { margin: 18px 8px 2px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+    .paper { display: grid; gap: 15px; }
+    .paper-intro { padding: 22px 24px; background: rgba(255, 253, 253, .72); border: 1px solid var(--line); border-radius: var(--radius-md); }
+    .paper-intro h2 { margin: 5px 0 6px; font-size: 22px; letter-spacing: -.035em; }
+    .paper-intro p { margin: 0; color: var(--muted); font-size: 13px; }
+    .paper-intro .mini-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+    .mini-pill { padding: 4px 9px; color: var(--muted); background: var(--surface-soft); border-radius: 99px; font-size: 11px; }
+
+    .question-card { scroll-margin-top: 90px; padding: 25px 27px 27px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); }
+    .question-card[data-level="easy"] { border-top: 3px solid #71b79d; }
+    .question-card[data-level="medium"] { border-top: 3px solid #9c84e8; }
+    .question-card[data-level="hard"] { border-top: 3px solid #de9265; }
+    .question-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 10px; font-weight: 800; }
+    .question-id { display: inline-grid; place-items: center; width: 31px; height: 31px; color: #fff; background: var(--ink); border-radius: 10px; font-size: 10px; letter-spacing: 0; }
+    .type-pill, .level-pill, .tag { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 8px; border-radius: 99px; font-size: 9px; letter-spacing: .06em; }
+    .type-pill { color: var(--purple-dark); background: var(--purple-soft); }
+    .level-pill.easy { color: #22775f; background: var(--mint-soft); }
+    .level-pill.medium { color: var(--purple-dark); background: var(--purple-soft); }
+    .level-pill.hard { color: #9b5d1d; background: var(--amber-soft); }
+    .points { margin-left: auto; color: var(--muted); font-size: 11px; letter-spacing: 0; text-transform: none; }
+    .question-card h3 { margin: 19px 0 16px; font-size: 19px; line-height: 1.45; letter-spacing: -.025em; }
+    .source-line { margin: -7px 0 17px; color: var(--muted); font-size: 12px; }
+    .source-line strong { color: var(--ink); font-weight: 700; }
+    .prompt-note { margin: -6px 0 16px; padding: 10px 13px; color: #675e73; background: #faf8fc; border-left: 3px solid #cfc5ec; border-radius: 0 9px 9px 0; font-size: 12px; }
+
+    .options { display: grid; gap: 9px; margin: 0; padding: 0; border: 0; }
+    .option { display: flex; align-items: flex-start; gap: 11px; padding: 13px 14px; color: var(--ink); background: #fcfbfd; border: 1px solid var(--line); border-radius: var(--radius-sm); transition: border-color .15s, background .15s, transform .15s; }
+    .option:hover { background: #f8f5ff; border-color: #c9bdf1; transform: translateY(-1px); }
+    .option:has(input:checked) { background: var(--purple-soft); border-color: #b7a8ec; }
+    .option input { flex: 0 0 auto; width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--purple); }
+    .option-key { flex: 0 0 auto; width: 22px; color: var(--purple-dark); font-weight: 800; }
+    .option-text { font-size: 14px; line-height: 1.5; }
+    .boolean-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .boolean-options .option { align-items: center; justify-content: center; }
+
+    .code-block { margin: 0 0 14px; padding: 17px 18px; overflow: auto; color: #ece8ff; background: #201b2d; border: 1px solid #3c3157; border-radius: var(--radius-sm); font: 12px/1.7 var(--mono); white-space: pre-wrap; }
+    .code-block .blank { color: #ffc984; font-weight: 800; }
+    .answer-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 7px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+    .answer-label span { color: #a19aa9; font-weight: 500; letter-spacing: 0; }
+    textarea.code-answer, textarea.export-textarea { width: 100%; min-height: 110px; resize: vertical; padding: 13px 14px; color: var(--ink); background: #fcfbfd; border: 1px solid var(--line); border-radius: var(--radius-sm); font: 13px/1.65 var(--mono); }
+    textarea.code-answer::placeholder { color: #b6aebb; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+    .tag { color: #746a86; background: var(--surface-soft); text-transform: none; letter-spacing: 0; }
+
+    .action-bar { position: fixed; right: 0; bottom: 0; left: 0; z-index: 9; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px max(5vw, calc((100vw - 1240px) / 2)); color: #f6f2ff; background: rgba(27, 23, 38, .96); border-top: 1px solid rgba(255, 255, 255, .1); box-shadow: 0 -14px 40px rgba(31, 24, 48, .18); backdrop-filter: blur(18px); }
+    .action-kicker { color: #bdb2d8; font-size: 10px; font-weight: 800; }
+    .save-meta { margin-top: 2px; color: #8f879e; font-size: 9px; }
+    .action-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 39px; padding: 8px 15px; border: 1px solid transparent; border-radius: 11px; font-size: 12px; font-weight: 800; transition: transform .15s, background .15s, border-color .15s; }
+    .button:hover { transform: translateY(-1px); }
+    .button-primary { color: #251c45; background: linear-gradient(135deg, #d8ccff, #a791ff); }
+    .button-secondary { color: #f0ebff; background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .12); }
+    .button-danger { color: #f5ced9; background: transparent; border-color: rgba(245, 206, 217, .22); }
+    .toast { position: fixed; right: 22px; bottom: 92px; z-index: 20; max-width: min(390px, 86vw); padding: 12px 15px; color: #fff; background: #272232; border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px; box-shadow: var(--shadow); font-size: 12px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    dialog { width: min(860px, 92vw); padding: 0; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 30px 100px rgba(30, 22, 47, .3); }
+    dialog::backdrop { background: rgba(29, 22, 42, .58); backdrop-filter: blur(4px); }
+    .dialog-inner { padding: 23px; }
+    .dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+    .dialog-head h2 { margin: 0 0 5px; font-size: 23px; letter-spacing: -.04em; }
+    .dialog-head p { margin-bottom: 17px; color: var(--muted); font-size: 12px; }
+    .dialog-close { width: 34px; height: 34px; color: var(--muted); background: var(--surface-soft); border: 0; border-radius: 9px; font-size: 18px; }
+    textarea.export-textarea { height: min(54vh, 500px); min-height: 240px; background: #fbf9fd; font-size: 12px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 13px; }
+    .dialog-actions .button-secondary { color: var(--purple-dark); background: var(--purple-soft); border-color: #d7cdfb; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 25px; }
+      .hero-card { max-width: 620px; }
+      .workspace-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; order: -1; }
+      .side-card { display: flex; align-items: center; gap: 15px; }
+      .nav-label { padding: 0; white-space: nowrap; }
+      .question-nav { flex: 1; grid-template-columns: repeat(15, minmax(28px, 1fr)); }
+      .side-tip { display: none; }
+    }
+
+    @media (max-width: 620px) {
+      main { width: min(92vw, 560px); padding-top: 40px; }
+      .topbar { padding: 0 4vw; }
+      .topbar-note { display: none; }
+      h1 { font-size: 43px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-card { padding: 13px 14px; }
+      .question-card { padding: 20px 17px 21px; border-radius: 18px; }
+      .question-card h3 { font-size: 17px; }
+      .question-nav { grid-template-columns: repeat(8, minmax(28px, 1fr)); }
+      .side-card { display: block; }
+      .nav-label { padding-bottom: 11px; }
+      .boolean-options { grid-template-columns: 1fr; }
+      .action-bar { align-items: flex-start; padding: 11px 4vw; }
+      .action-buttons { gap: 6px; }
+      .button { min-height: 36px; padding: 7px 10px; font-size: 11px; }
+      .action-bar .save-meta { max-width: 130px; line-height: 1.25; }
+    }
+
+    @media print {
+      .topbar, .sidebar, .action-bar, .hero-card, .toast { display: none !important; }
+      body { background: white; }
+      main { width: 100%; padding: 20px; }
+      .hero { display: block; }
+      .question-card { break-inside: avoid; box-shadow: none; }
+      textarea.code-answer { border-color: #aaa; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">BT</span><span>HOT 100 / ACTIVE RECALL</span></div>
+      <div class="topbar-note">二叉树统一解题框架 · 离线试卷</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">RECALL PAPER / 二叉树专题</div>
+          <h1>先定义返回值，<br>再开始写树。</h1>
+          <p class="hero-copy">这是一套基于 <strong>hot100_binary_tree.md</strong> 的主动回忆试卷。题目从遍历基础一路推进到全局答案、前缀和回溯与最大路径和，做完后可以把完整答案包复制给我。</p>
+        </div>
+        <aside class="hero-card">
+          <div class="hero-card-title">CORE QUESTION / 核心问题</div>
+          <h2><code>dfs(root)</code> 到底代表什么？</h2>
+          <p>每道题都在检查：子树返回什么信息、当前节点如何合并、又应该把什么交给父节点。</p>
+        </aside>
+      </section>
+
+      <section class="stats-grid" aria-label="试卷信息">
+        <div class="stat-card"><div class="stat-label">题目数量</div><div class="stat-value">15 <small>题</small></div></div>
+        <div class="stat-card"><div class="stat-label">总分</div><div class="stat-value">100 <small>分</small></div></div>
+        <div class="stat-card"><div class="stat-label">当前进度</div><div class="stat-value" id="progressText">0 <small>/ 15 已答</small></div><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div></div>
+        <div class="stat-card"><div class="stat-label">建议用时</div><div class="stat-value">25–35 <small>分钟</small></div></div>
+      </section>
+
+      <div class="workspace-grid">
+        <aside class="sidebar">
+          <div class="side-card">
+            <div class="nav-label">题目导航</div>
+            <nav id="questionNav" class="question-nav" aria-label="题目导航"></nav>
+            <p class="side-tip">绿色圆点表示这一题已有答案。代码补全不要求格式完全一致，但要写出关键不变量。</p>
+          </div>
+        </aside>
+
+        <section class="paper" aria-label="二叉树试卷">
+          <div class="paper-intro">
+            <h2>答题说明</h2>
+            <p>选择题会标明单选或多选；判断题选择“正确 / 错误”；代码补全请把关键代码写入文本框。页面会自动保存进度，完成后点击底部的“保存并复制答案包”。</p>
+            <div class="mini-pills"><span class="mini-pill">基础 5 题 · 20 分</span><span class="mini-pill">进阶 5 题 · 30 分</span><span class="mini-pill">综合 5 题 · 50 分</span></div>
+          </div>
+          <div id="questions"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="action-bar">
+      <div>
+        <div class="action-kicker">ANSWER PACKAGE / 作答包</div>
+        <div class="save-meta" id="saveMeta">答案只保存在本机浏览器，直到你点击复制。</div>
+      </div>
+      <div class="action-buttons">
+        <button class="button button-danger" id="clearButton" type="button">清空本次</button>
+        <button class="button button-secondary" id="saveButton" type="button">仅保存进度</button>
+        <button class="button button-primary" id="copyButton" type="button">保存并复制答案包</button>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="exportDialog">
+    <div class="dialog-inner">
+      <div class="dialog-head">
+        <div><h2>答案包已生成</h2><p>如果浏览器没有自动写入剪贴板，可以点击下方按钮或手动复制文本。</p></div>
+        <button class="dialog-close" id="closeDialog" type="button" aria-label="关闭">×</button>
+      </div>
+      <textarea class="export-textarea" id="exportPreview" readonly aria-label="答案包预览"></textarea>
+      <div class="dialog-actions"><button class="button button-secondary" id="copyAgainButton" type="button">再次复制</button><button class="button button-primary" id="closeDialogButton" type="button">关闭</button></div>
+    </div>
+  </dialog>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const questions = [
+        {
+          id: "BT-01", level: "基础", levelKey: "easy", type: "choice", typeLabel: "单选题", points: 4,
+          source: "104 · 二叉树的最大深度", tags: ["dfs返回值", "后序遍历"],
+          prompt: "如果把 dfs(root) 定义为“返回 root 子树的最大高度”，空节点和当前节点的返回值应该分别是什么？",
+          options: [
+            "空节点返回 null；当前返回 max(left, right)",
+            "空节点返回 0；当前返回 max(left, right) + 1",
+            "空节点返回 1；当前返回 max(left, right) - 1",
+            "空节点返回 -1；当前返回 max(left, right)"
+          ],
+          correct: [1],
+          reference: "B：空节点高度为 0，当前节点高度为 max(left, right) + 1。",
+          rubric: "只有 B 完全正确；考察是否先给 dfs 一个清晰的语义。"
+        },
+        {
+          id: "BT-02", level: "基础", levelKey: "easy", type: "boolean", typeLabel: "判断题", points: 4,
+          source: "104 · 二叉树的最大深度", tags: ["后序遍历", "子树信息"],
+          prompt: "对最大深度题，必须先递归得到左右子树高度，再用 max(left, right) + 1 计算当前节点高度。",
+          correct: "true",
+          reference: "正确。左右子树的结果是当前节点合并所需的信息。",
+          rubric: "选择“正确”得分；选择“错误”说明后序合并关系尚未稳定。"
+        },
+        {
+          id: "BT-03", level: "基础", levelKey: "easy", type: "fill", typeLabel: "代码补全", points: 4,
+          source: "94 · 二叉树的中序遍历", tags: ["中序遍历", "BST基础"],
+          prompt: "补全下面的 Java 中序遍历。两处空白分别是递归左子树和递归右子树。",
+          code: "private void inorder(TreeNode root, List<Integer> result) {\n    if (root == null) {\n        return;\n    }\n\n    ___\n    result.add(root.val);\n    ___\n}",
+          correct: "inorder(root.left, result);\n\ninorder(root.right, result);",
+          reference: "第一空：inorder(root.left, result);\n第二空：inorder(root.right, result);",
+          rubric: "两处都正确得 4 分；中序必须保持“左 → 根 → 右”的顺序。"
+        },
+        {
+          id: "BT-04", level: "基础", levelKey: "easy", type: "choice", typeLabel: "多选题", multi: true, points: 4,
+          source: "102 · 二叉树的层序遍历", tags: ["BFS", "层级边界"],
+          prompt: "为了让 BFS 一轮只处理当前层，下面哪些做法是正确的？",
+          options: [
+            "进入一层前保存 int size = queue.size()",
+            "当前层循环使用 i < size，而不是动态的 queue.size()",
+            "本轮新入队的孩子留到下一轮处理",
+            "每弹出一个节点，就把 size 加 1"
+          ],
+          correct: [0, 1, 2],
+          reference: "A、B、C。固定 size 才能把当前层和下一层隔开。",
+          rubric: "必须选 A、B、C 且不能选 D；D 会把下一层节点混入当前层。"
+        },
+        {
+          id: "BT-05", level: "基础", levelKey: "easy", type: "boolean", typeLabel: "判断题", points: 4,
+          source: "199 · 二叉树的右视图", tags: ["BFS", "右视图"],
+          prompt: "右视图用 BFS 时，只要从根开始始终先把左孩子入队，当前层的第一个节点就是这一层最右侧能看到的节点。",
+          correct: "false",
+          reference: "错误。左孩子优先时当前层第一个通常是最左节点；BFS 取每层最后一个，或使用右优先 DFS 取每层第一个。",
+          rubric: "选择“错误”得分；关键是不要混淆 BFS 的入队顺序与右视图的取值位置。"
+        },
+        {
+          id: "BT-06", level: "进阶", levelKey: "medium", type: "choice", typeLabel: "多选题", multi: true, points: 6,
+          source: "98 · 验证二叉搜索树", tags: ["BST上下界", "严格不等"],
+          prompt: "关于验证 BST，下面哪些说法正确？",
+          options: [
+            "递归时可以把合法范围 low、high 传给子树",
+            "左子树范围是 (low, root.val)，右子树范围是 (root.val, high)",
+            "只检查左孩子 < root.val < 右孩子，就足以验证整棵树",
+            "只要局部有序，重复值也一定合法"
+          ],
+          correct: [0, 1],
+          reference: "A、B。BST 约束作用于整棵子树，且通常要求严格不等，重复值不合法。",
+          rubric: "必须选 A、B；C 忽略深层节点范围，D 与严格不等约束冲突。"
+        },
+        {
+          id: "BT-07", level: "进阶", levelKey: "medium", type: "fill", typeLabel: "代码补全", points: 6,
+          source: "230 · BST 中第 K 小的元素", tags: ["中序有序", "共享状态"],
+          prompt: "补全中序遍历找到第 K 小元素的关键代码。count 是成员变量，表示还剩第几个节点。",
+          code: "dfs(root.left);\n\nif (count == 0) {\n    return;\n}\n\n___\n\ndfs(root.right);",
+          correct: "--count;\nif (count == 0) {\n    result = root.val;\n    return;\n}",
+          reference: "先 --count；若 count 变为 0，就把 result 设为 root.val 并返回。",
+          rubric: "必须体现“中序访问当前节点时递减 count，并在归零时记录结果”；只写 count-- 但不记录结果只能得部分分。"
+        },
+        {
+          id: "BT-08", level: "进阶", levelKey: "medium", type: "boolean", typeLabel: "判断题", points: 6,
+          source: "543 · 二叉树的直径", tags: ["单边返回", "全局答案"],
+          prompt: "543 二叉树的直径中，dfs 返回给父节点的值应该是 left + right，因为最长路径可能同时经过当前节点的左右子树。",
+          correct: "false",
+          reference: "错误。更新全局直径时用 left + right；返回父节点时路径不能分叉，只能返回 max(left, right) + 1。",
+          rubric: "选择“错误”得分；要分清“当前节点形成完整答案”和“交给父节点的单边贡献”。"
+        },
+        {
+          id: "BT-09", level: "进阶", levelKey: "medium", type: "choice", typeLabel: "多选题", multi: true, points: 6,
+          source: "105 · 从前序与中序遍历序列构造二叉树", tags: ["分治", "遍历关系"],
+          prompt: "用 preorder 和 inorder 构造二叉树时，下面哪些说法正确？",
+          options: [
+            "preorder 当前区间的第一个值一定是根节点",
+            "根节点在 inorder 中的位置把区间切成左、右子树",
+            "用哈希表记录 inorder 下标，可以避免每次线性查找根位置",
+            "必须先把 preorder 整体排序，才能递归构造"
+          ],
+          correct: [0, 1, 2],
+          reference: "A、B、C。前序找根，中序切左右，哈希表把查找根位置降为 O(1)。",
+          rubric: "必须选 A、B、C 且不能选 D；排序会破坏遍历序列的信息。"
+        },
+        {
+          id: "BT-10", level: "进阶", levelKey: "medium", type: "fill", typeLabel: "代码补全", points: 6,
+          source: "437 · 路径总和 III", tags: ["前缀和", "回溯"],
+          prompt: "补全路径总和 III 的两个关键表达式：查询以当前节点结尾的路径数量，并在离开当前分支时撤销一次前缀和。",
+          code: "prefix.put(0L, 1);\ncurrentSum += root.val;\n\nint result = prefix.getOrDefault(___, 0);\n\nprefix.put(currentSum,\n        prefix.getOrDefault(currentSum, 0) + 1);\n\n// 递归左右子树后回溯\nprefix.put(currentSum,\n        prefix.get(currentSum) - ___);",
+          correct: "currentSum - targetSum\n\n1",
+          reference: "查询键：currentSum - targetSum；回溯时减去 1。进入节点加入前缀和，离开节点必须撤销。",
+          rubric: "两个空都正确得 6 分；漏掉初始化 prefix[0]=1、查询补数或回溯撤销，分别说明对应边界缺陷。"
+        },
+        {
+          id: "BT-11", level: "综合", levelKey: "hard", type: "choice", typeLabel: "多选题", multi: true, points: 10,
+          source: "124 · 二叉树中的最大路径和", tags: ["最大路径和", "单边贡献", "全局答案"],
+          prompt: "关于最大路径和的后序 DFS，下面哪些做法正确？",
+          options: [
+            "子树贡献可以用 Math.max(0, dfs(child)) 截断负数",
+            "在当前节点更新 answer = left + root.val + right",
+            "返回父节点时只能返回 root.val + Math.max(left, right)",
+            "answer 初始化为 0 可以覆盖整棵树全为负数的情况"
+          ],
+          correct: [0, 1, 2],
+          reference: "A、B、C。负贡献应舍弃；当前节点可以作为左右两边的拐点，但向上只能带一边。",
+          rubric: "必须选 A、B、C 且不能选 D；全负树要求 answer 从 Integer.MIN_VALUE 开始。"
+        },
+        {
+          id: "BT-12", level: "综合", levelKey: "hard", type: "boolean", typeLabel: "判断题", points: 10,
+          source: "124 · 二叉树中的最大路径和", tags: ["负数边界", "全局答案"],
+          prompt: "如果整棵树的节点值全部为负数，answer 可以初始化为 0，因为最大路径和不可能小于 0。",
+          correct: "false",
+          reference: "错误。路径必须至少包含一个节点，答案可能是最接近 0 的负数，所以必须初始化为 Integer.MIN_VALUE。",
+          rubric: "选择“错误”得分；这是最大路径和最容易漏掉的全负边界。"
+        },
+        {
+          id: "BT-13", level: "综合", levelKey: "hard", type: "fill", typeLabel: "代码补全", points: 10,
+          source: "236 · 二叉树的最近公共祖先", tags: ["后序合并", "节点身份"],
+          prompt: "补全最近公共祖先的合并逻辑。left/right 表示左右子树返回的目标节点。",
+          code: "if (root == null || root == p || root == q) {\n    return root;\n}\n\nTreeNode left = lowestCommonAncestor(root.left, p, q);\nTreeNode right = lowestCommonAncestor(root.right, p, q);\n\nif (left != null && right != null) {\n    return ___;\n}\nreturn left != null ? left : ___;",
+          correct: "root\nright",
+          reference: "左右都找到时返回 root；只有一边找到时返回 left 或 right 中非空的那一边。",
+          rubric: "两个空都正确得 10 分；还应保留 root/p/q 的提前返回，体现“子树返回找到的目标节点”的定义。"
+        },
+        {
+          id: "BT-14", level: "综合", levelKey: "hard", type: "choice", typeLabel: "多选题", multi: true, points: 10,
+          source: "114 · 二叉树展开为链表", tags: ["前序顺序", "指针修改"],
+          prompt: "关于把二叉树原地展开为前序链表，下面哪些做法正确？",
+          options: [
+            "覆盖 root.right 前先保存原来的右子树",
+            "把 root.left 接到 root.right 后，再把 root.left 置为 null",
+            "展开后的所有 left 都应为 null，节点通过 right 按前序连接",
+            "可以直接覆盖 root.right，因为原右子树之后还会自动找回来"
+          ],
+          correct: [0, 1, 2],
+          reference: "A、B、C。原右子树必须先保存到 oldRight，否则改指针后会丢失。",
+          rubric: "必须选 A、B、C 且不能选 D；考察递归修改结构时的指针保存。"
+        },
+        {
+          id: "BT-15", level: "综合", levelKey: "hard", type: "fill", typeLabel: "代码补全", points: 10,
+          source: "124 · 二叉树中的最大路径和", tags: ["双边汇合", "单边返回"],
+          prompt: "补全最大路径和的核心两行：当前节点可以让左右贡献在此汇合，但返回父节点时只能选择一边。",
+          code: "int left = Math.max(0, dfs(root.left));\nint right = Math.max(0, dfs(root.right));\n\nanswer = Math.max(answer, ___);\n\nreturn root.val + ___;",
+          correct: "left + root.val + right\n\nMath.max(left, right)",
+          reference: "更新全局答案：left + root.val + right；返回父节点：Math.max(left, right)。",
+          rubric: "两行都正确得 10 分；第一行是双边完整路径，第二行是不能分叉的单边贡献。"
+        }
+      ];
+
+      const storageKey = "hot100-binary-tree-quiz-v1";
+      const state = { answers: {}, savedAt: null };
+      const questionsEl = document.getElementById("questions");
+      const navEl = document.getElementById("questionNav");
+      const progressTextEl = document.getElementById("progressText");
+      const progressFillEl = document.getElementById("progressFill");
+      const saveMetaEl = document.getElementById("saveMeta");
+      const toastEl = document.getElementById("toast");
+      const exportDialog = document.getElementById("exportDialog");
+      const exportPreview = document.getElementById("exportPreview");
+      let toastTimer;
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function formatDate(value) {
+        if (!value) return "尚未保存";
+        try {
+          return new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+        } catch (_) {
+          return new Date(value).toLocaleString();
+        }
+      }
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+          if (saved && saved.answers && typeof saved.answers === "object") {
+            state.answers = saved.answers;
+            state.savedAt = saved.savedAt || null;
+          }
+        } catch (_) {
+          state.answers = {};
+          state.savedAt = null;
+        }
+      }
+
+      function persist(showMessage) {
+        state.savedAt = new Date().toISOString();
+        try {
+          localStorage.setItem(storageKey, JSON.stringify({ answers: state.answers, savedAt: state.savedAt }));
+          saveMetaEl.textContent = `本机已保存 · ${formatDate(state.savedAt)}`;
+          if (showMessage) showToast("进度已保存到本机浏览器。");
+          return true;
+        } catch (_) {
+          if (showMessage) showToast("浏览器拒绝了本地保存，但当前答案仍保留在页面中。");
+          return false;
+        }
+      }
+
+      function isAnswered(question) {
+        const value = state.answers[question.id];
+        if (question.type === "choice") return Array.isArray(value) && value.length > 0;
+        return typeof value === "string" && value.trim().length > 0;
+      }
+
+      function selected(question, index) {
+        return Array.isArray(state.answers[question.id]) && state.answers[question.id].includes(index);
+      }
+
+      function renderCode(code) {
+        return escapeHtml(code).replaceAll("___", '<span class="blank">___</span>');
+      }
+
+      function renderQuestion(question, index) {
+        const source = `<div class="source-line">来源：<strong>${escapeHtml(question.source)}</strong></div>`;
+        const tags = question.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+        let answerArea = "";
+
+        if (question.type === "choice") {
+          const inputType = question.multi ? "checkbox" : "radio";
+          answerArea = `<fieldset class="options" aria-label="${escapeHtml(question.id)} 选项">${question.options.map((option, optionIndex) => `
+            <label class="option">
+              <input type="${inputType}" name="${question.id}" data-qid="${question.id}" data-option="${optionIndex}" ${selected(question, optionIndex) ? "checked" : ""}>
+              <span class="option-key">${String.fromCharCode(65 + optionIndex)}</span>
+              <span class="option-text">${escapeHtml(option)}</span>
+            </label>`).join("")}</fieldset>`;
+        } else if (question.type === "boolean") {
+          const current = state.answers[question.id];
+          answerArea = `<fieldset class="options boolean-options" aria-label="${escapeHtml(question.id)} 判断选项">
+            <label class="option"><input type="radio" name="${question.id}" value="true" data-qid="${question.id}" ${current === "true" ? "checked" : ""}><span class="option-text">正确</span></label>
+            <label class="option"><input type="radio" name="${question.id}" value="false" data-qid="${question.id}" ${current === "false" ? "checked" : ""}><span class="option-text">错误</span></label>
+          </fieldset>`;
+        } else {
+          const value = typeof state.answers[question.id] === "string" ? state.answers[question.id] : "";
+          answerArea = `<pre class="code-block"><code>${renderCode(question.code)}</code></pre>
+            <label class="answer-label" for="answer-${question.id}">你的补全 <span>写关键代码即可，格式不必完全一致</span></label>
+            <textarea class="code-answer" id="answer-${question.id}" data-qid="${question.id}" spellcheck="false" placeholder="在这里补全代码……">${escapeHtml(value)}</textarea>`;
+        }
+
+        return `<article class="question-card" id="card-${question.id}" data-level="${question.levelKey}">
+          <div class="question-meta">
+            <span class="question-id">${String(index + 1).padStart(2, "0")}</span>
+            <span class="level-pill ${question.levelKey}">${escapeHtml(question.level)}</span>
+            <span class="type-pill">${escapeHtml(question.typeLabel)}</span>
+            <span class="points">${question.points} 分</span>
+          </div>
+          <h3>${escapeHtml(question.prompt)}</h3>
+          ${source}
+          ${answerArea}
+          <div class="tags">${tags}</div>
+        </article>`;
+      }
+
+      function render() {
+        questionsEl.innerHTML = questions.map(renderQuestion).join("");
+        navEl.innerHTML = questions.map((question, index) => `<button class="nav-button ${isAnswered(question) ? "answered" : ""}" type="button" data-target="card-${question.id}" aria-label="第 ${index + 1} 题">${String(index + 1).padStart(2, "0")}</button>`).join("");
+        updateProgress();
+      }
+
+      function updateProgress() {
+        const answered = questions.filter(isAnswered).length;
+        progressTextEl.innerHTML = `${answered} <small>/ 15 已答</small>`;
+        progressFillEl.style.width = `${Math.round(answered / questions.length * 100)}%`;
+        navEl.querySelectorAll(".nav-button").forEach((button, index) => button.classList.toggle("answered", isAnswered(questions[index])));
+      }
+
+      function updateAnswer(questionId, value) {
+        state.answers[questionId] = value;
+        updateProgress();
+        window.clearTimeout(window.__hot100SaveTimer);
+        window.__hot100SaveTimer = window.setTimeout(() => persist(false), 450);
+      }
+
+      function handleAnswerEvent(event) {
+        const target = event.target;
+        if (!target || !target.dataset || !target.dataset.qid) return;
+        const question = questions.find((item) => item.id === target.dataset.qid);
+        if (!question) return;
+        if (question.type === "choice") {
+          const current = Array.isArray(state.answers[question.id]) ? [...state.answers[question.id]] : [];
+          const index = Number(target.dataset.option);
+          if (question.multi) {
+            if (target.checked && !current.includes(index)) current.push(index);
+            if (!target.checked) state.answers[question.id] = current.filter((item) => item !== index);
+            else state.answers[question.id] = current;
+          } else {
+            state.answers[question.id] = [index];
+          }
+          updateAnswer(question.id, state.answers[question.id]);
+        } else {
+          updateAnswer(question.id, target.value);
+        }
+      }
+
+      function formatUserAnswer(question) {
+        const value = state.answers[question.id];
+        if (question.type === "choice") {
+          if (!Array.isArray(value) || value.length === 0) return "（未作答）";
+          return value.slice().sort((a, b) => a - b).map((index) => String.fromCharCode(65 + index)).join(", ");
+        }
+        if (question.type === "boolean") {
+          if (value !== "true" && value !== "false") return "（未作答）";
+          return value === "true" ? "正确" : "错误";
+        }
+        return typeof value === "string" && value.trim() ? value.trim() : "（未作答）";
+      }
+
+      function safeCodeBlock(value) {
+        return String(value).replaceAll("```", "`` `");
+      }
+
+      function buildExport() {
+        const answered = questions.filter(isAnswered).length;
+        const lines = [
+          "# Hot 100 二叉树主动回忆试卷｜作答包",
+          "",
+          `- 来源笔记：hot100_binary_tree.md`,
+          `- 试卷版本：BT-RECALL-2026-09 / 15 题 / 100 分`,
+          `- 保存时间：${formatDate(new Date().toISOString())}`,
+          `- 完成进度：${answered}/${questions.length}`,
+          "- 用途：请根据下方作答记录和评分参考，给我逐题评分并生成弱点分析报告。",
+          "",
+          "## 一、作答记录",
+          ""
+        ];
+
+        questions.forEach((question, index) => {
+          lines.push(`### ${String(index + 1).padStart(2, "0")} · ${question.id} · ${question.level} · ${question.typeLabel} · ${question.points} 分`);
+          lines.push(`- 来源题目：${question.source}`);
+          lines.push(`- 知识标签：${question.tags.join("、")}`);
+          lines.push(`- 题目：${question.prompt}`);
+          if (question.options) {
+            question.options.forEach((option, optionIndex) => lines.push(`  - ${String.fromCharCode(65 + optionIndex)}. ${option}`));
+          }
+          if (question.code) {
+            lines.push("- 代码题干：");
+            lines.push("```java");
+            lines.push(safeCodeBlock(question.code));
+            lines.push("```");
+          }
+          const userAnswer = formatUserAnswer(question);
+          if (question.type === "fill" && userAnswer !== "（未作答）") {
+            lines.push("- 我的答案：");
+            lines.push("```java");
+            lines.push(safeCodeBlock(userAnswer));
+            lines.push("```");
+          } else {
+            lines.push(`- 我的答案：${userAnswer}`);
+          }
+          lines.push("");
+        });
+
+        lines.push("## 二、评分参考（请用于评分，不要跳过代码题的语义判断）", "");
+        questions.forEach((question, index) => {
+          lines.push(`### ${String(index + 1).padStart(2, "0")} · ${question.id}`);
+          lines.push(`- 参考答案：${question.reference.replaceAll("\n", "；")}`);
+          lines.push(`- 评分标准：${question.rubric}`);
+          lines.push(`- 分值：${question.points}`);
+          lines.push("");
+        });
+
+        lines.push(
+          "## 三、评分请求",
+          "请按这份试卷的原始分值评分，总分换算为 100 分。选择题和判断题按答案集合/真假值精确判断；代码补全按评分标准检查语义等价写法。请输出：",
+          "1. 总分、完成率、基础/进阶/综合分段得分；",
+          "2. 逐题得分、错因和一句话纠正；",
+          "3. 按知识标签聚合的弱点分析，并引用对应题号；",
+          "4. 下一轮复习顺序、每个弱点的一句话口诀，以及 3 道针对性追问题。"
+        );
+        return lines.join("\n");
+      }
+
+      async function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.setAttribute("readonly", "");
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.select();
+        helper.setSelectionRange(0, helper.value.length);
+        let copied = false;
+        try { copied = document.execCommand("copy"); } catch (_) { copied = false; }
+        helper.remove();
+        return copied;
+      }
+
+      function showToast(message) {
+        window.clearTimeout(toastTimer);
+        toastEl.textContent = message;
+        toastEl.classList.add("show");
+        toastTimer = window.setTimeout(() => toastEl.classList.remove("show"), 3200);
+      }
+
+      async function saveAndCopy() {
+        persist(false);
+        const text = buildExport();
+        exportPreview.value = text;
+        try {
+          const copied = await copyText(text);
+          if (copied) {
+            showToast("答案包已复制到剪贴板，可以直接发给我评分。");
+            saveMetaEl.textContent = `已复制答案包 · ${formatDate(new Date().toISOString())}`;
+            return;
+          }
+        } catch (_) {
+          // fall through to the visible manual-copy fallback
+        }
+        if (typeof exportDialog.showModal === "function") exportDialog.showModal();
+        exportPreview.focus();
+        exportPreview.select();
+        showToast("浏览器没有开放剪贴板，请在弹窗里手动复制。");
+      }
+
+      async function copyAgain() {
+        try {
+          if (await copyText(exportPreview.value)) {
+            showToast("答案包已再次复制。");
+            return;
+          }
+        } catch (_) {}
+        exportPreview.focus();
+        exportPreview.select();
+        showToast("请按 Command/Ctrl + C 复制选中的内容。");
+      }
+
+      function clearAnswers() {
+        if (!window.confirm("确定清空这套试卷的所有答案吗？此操作不能撤销。")) return;
+        state.answers = {};
+        state.savedAt = null;
+        try { localStorage.removeItem(storageKey); } catch (_) {}
+        render();
+        saveMetaEl.textContent = "答案只保存在本机浏览器，直到你点击复制。";
+        showToast("本次答案已清空。");
+      }
+
+      questionsEl.addEventListener("change", handleAnswerEvent);
+      questionsEl.addEventListener("input", handleAnswerEvent);
+      navEl.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-target]");
+        if (!button) return;
+        document.getElementById(button.dataset.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      document.getElementById("saveButton").addEventListener("click", () => persist(true));
+      document.getElementById("copyButton").addEventListener("click", () => void saveAndCopy());
+      document.getElementById("clearButton").addEventListener("click", clearAnswers);
+      document.getElementById("copyAgainButton").addEventListener("click", () => void copyAgain());
+      document.getElementById("closeDialog").addEventListener("click", () => exportDialog.close());
+      document.getElementById("closeDialogButton").addEventListener("click", () => exportDialog.close());
+      window.addEventListener("beforeunload", () => persist(false));
+
+      loadState();
+      render();
+      if (state.savedAt) saveMetaEl.textContent = `本机已保存 · ${formatDate(state.savedAt)}`;
+    })();
+  </script>
+</body>
+</html>
