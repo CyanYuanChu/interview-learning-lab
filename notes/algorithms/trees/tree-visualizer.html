@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hot 100 二叉树交互图解</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --ink: light-dark(#3f4248, #e7e9ed);
+        --muted: light-dark(#7a7f88, #aeb4bf);
+        --line: light-dark(#e5e7eb, #363b45);
+        --soft: light-dark(rgb(0 0 0 / 2.5%), rgb(255 255 255 / 4%));
+        --blue: light-dark(#55799f, #8fb4dd);
+        --green: light-dark(#4f8a70, #8bc5a7);
+        --orange: light-dark(#b27c3d, #ddb27a);
+        --red: light-dark(#b35d65, #e49aa0);
+        --blue-soft: light-dark(#eaf1ff, #203253);
+        --green-soft: light-dark(#e9fbf3, #18362d);
+        --orange-soft: light-dark(#fff2df, #46301b);
+        --red-soft: light-dark(#ffebed, #44262a);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { background: transparent; }
+      body { margin: 0; padding: 8px 3px 18px; color: var(--ink); background: transparent; }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: transparent;
+        color: var(--ink);
+        padding: 7px 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) { border-color: var(--blue); background: var(--soft); }
+      button:disabled { cursor: not-allowed; opacity: .42; }
+      button:focus-visible { outline: 3px solid #ffc14d; outline-offset: 2px; }
+
+      .demo { width: min(980px, 100%); margin: 0 auto; }
+      .header { padding: 2px 0 12px; border-bottom: 1px solid var(--line); }
+      .eyebrow { color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+      h1 { margin: 7px 0 6px; font-size: clamp(20px, 3vw, 27px); font-weight: 700; letter-spacing: -.035em; }
+      .subtitle { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+      .toolbar { display: flex; align-items: center; gap: 9px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+      .toolbar .primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+      .toolbar .danger { border-color: #f1b8bd; color: var(--red); }
+      .progress { flex: 1; min-width: 100px; height: 5px; overflow: hidden; border-radius: 99px; background: var(--soft); }
+      .progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .28s ease; }
+      .step-label { min-width: 76px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; text-align: right; }
+
+      .event { display: grid; grid-template-columns: auto 1fr; gap: 11px; align-items: center; margin-top: 13px; padding: 10px 12px; border-left: 3px solid var(--blue); background: var(--soft); }
+      .event-kicker { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+      .event-text { margin-top: 3px; font-size: 14px; font-weight: 750; line-height: 1.5; }
+      .event-detail { margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+      .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); gap: 22px; margin-top: 16px; }
+      .panel { min-width: 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+      .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .panel-title { font-size: 12px; font-weight: 800; }
+      .panel-note { color: var(--muted); font-size: 10px; }
+
+      .tree-wrap { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+      .tree-svg { display: block; width: 100%; height: auto; min-height: 270px; }
+      .edge { stroke: light-dark(#9cacbf, #687890); stroke-width: 1.8; fill: none; transition: all .24s ease; }
+      .edge.left { stroke: var(--blue); }
+      .edge.right { stroke: var(--green); }
+      .edge.active { stroke-width: 3; }
+      .node circle { stroke: var(--line); stroke-width: 1.7; fill: light-dark(transparent, #1b1e24); transition: all .24s ease; }
+      .node text { fill: var(--ink); font-size: 14px; font-weight: 800; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+      .node.current circle { stroke: var(--blue); stroke-width: 3; fill: var(--blue-soft); }
+      .node.done circle { stroke: var(--green); fill: var(--green-soft); }
+      .node.target circle { stroke: var(--orange); stroke-width: 2.8; fill: var(--orange-soft); }
+      .node.warning circle { stroke: var(--red); stroke-width: 3; fill: var(--red-soft); }
+      .node.answer circle { stroke: var(--orange); stroke-width: 3; fill: var(--orange-soft); }
+      .node-badge { fill: var(--muted); font-size: 9px; font-weight: 700; text-anchor: middle; }
+      .edge-label { fill: var(--muted); font-size: 9px; font-weight: 700; }
+
+      .legend { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 9px; color: var(--muted); font-size: 10px; }
+      .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+      .dot.done { background: var(--green); }
+      .dot.target { background: var(--orange); }
+      .dot.warning { background: var(--red); }
+
+      .state-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+      .state-item { min-width: 0; padding: 8px 0; border-bottom: 1px solid var(--line); }
+      .state-name { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+      .state-value { overflow: hidden; margin-top: 4px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+      .state-value.orange { color: var(--orange); }
+      .state-value.green { color: var(--green); }
+      .state-value.red { color: var(--red); }
+      .stack { display: flex; flex-wrap: wrap; gap: 6px; min-height: 31px; margin-top: 10px; }
+      .chip { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 700; }
+      .chip.active { border-color: var(--blue); background: var(--blue-soft); }
+      .chip.done { border-color: var(--green); color: var(--green); }
+      .chip.warn { border-color: var(--red); color: var(--red); }
+      .empty { color: var(--muted); font-size: 11px; }
+
+      .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; min-height: 42px; margin-top: 12px; padding: 7px 9px; border: 1px dashed var(--line); border-radius: 7px; }
+      .strip-label { color: var(--muted); font-size: 10px; }
+      .strip-value { color: var(--green); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 800; }
+      .token-row { display: flex; flex-wrap: wrap; gap: 6px; }
+      .token { display: inline-grid; min-width: 34px; height: 32px; place-items: center; padding: 0 7px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 800; transition: all .2s ease; }
+      .token.current { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); }
+      .token.range { border-color: var(--green); background: var(--green-soft); }
+      .token.mid { border-color: var(--orange); background: var(--orange-soft); color: var(--orange); }
+      .token.used { opacity: .36; }
+      .token.bad { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+
+      .queue { display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px; padding: 6px 8px; border: 1px dashed var(--line); border-radius: 7px; }
+      .queue .chip { border-color: var(--blue); }
+      .formula { margin-top: 11px; padding: 9px 10px; border-left: 2px solid var(--orange); background: var(--soft); color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.6; }
+      .formula strong { color: var(--orange); }
+      .map { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .map .chip { color: var(--orange); }
+      .path { overflow-x: auto; white-space: nowrap; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; }
+
+      .code-panel { margin-top: 16px; }
+      .code { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.72; }
+      .code-line { display: grid; grid-template-columns: 32px 1fr; min-height: 20px; padding-right: 10px; }
+      .code-line.active { background: var(--blue-soft); }
+      .line-no { padding-right: 8px; color: var(--muted); text-align: right; user-select: none; }
+      .code-line.active .line-no { color: var(--blue); font-weight: 800; }
+      .code-text { white-space: pre; }
+      .kw { color: light-dark(#9257b5, #db9bf1); }
+      .var-token { color: light-dark(#126d9c, #7fd8ff); }
+
+      .explain { margin-top: 16px; padding: 12px 0 0; border-top: 1px solid var(--line); }
+      .explain-title { margin: 0 0 8px; font-size: 12px; }
+      .explain-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+      .explain-item { padding: 8px 8px 8px 9px; border-left: 2px solid var(--line); background: transparent; }
+      .explain-item strong { display: block; color: var(--blue); font-size: 11px; }
+      .explain-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+      @media (max-width: 780px) {
+        body { padding: 10px; }
+        .grid { grid-template-columns: 1fr; }
+        .toolbar { flex-wrap: wrap; }
+        .progress { order: 5; flex-basis: 100%; }
+        .step-label { margin-left: auto; }
+        .explain-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="demo">
+      <section class="header">
+        <div id="eyebrow" class="eyebrow"></div>
+        <h1 id="title"></h1>
+        <p id="subtitle" class="subtitle"></p>
+      </section>
+
+      <section class="toolbar" aria-label="动画控制">
+        <button id="prev" type="button">← 上一步</button>
+        <button id="next" class="primary" type="button">下一步 →</button>
+        <button id="play" type="button">▶ 自动播放</button>
+        <button id="reset" class="danger" type="button">↺ 重置</button>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+        <div id="stepLabel" class="step-label">1 / 1</div>
+      </section>
+
+      <section class="event" aria-live="polite">
+        <div class="event-kicker">CURRENT STEP</div>
+        <div>
+          <div id="eventText" class="event-text"></div>
+          <div id="eventDetail" class="event-detail"></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head"><div id="sceneTitle" class="panel-title">算法状态</div><div id="sceneNote" class="panel-note"></div></div>
+          <div id="scene"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">当前状态</div><div class="panel-note">随着下一步同步更新</div></div>
+          <div id="statePanel"></div>
+        </div>
+      </section>
+
+      <section class="panel code-panel">
+        <div class="panel-head"><div class="panel-title">代码执行位置</div><div class="panel-note">高亮行就是当前步骤</div></div>
+        <div id="code" class="code"></div>
+      </section>
+
+      <section class="explain">
+        <h2 class="explain-title">这道题的记忆抓手</h2>
+        <div id="concepts" class="explain-grid"></div>
+      </section>
+    </main>
+
+    <script>
+      function cloneTree(tree) {
+        return Object.fromEntries(Object.entries(tree).map(([id, node]) => [id, { ...node }]));
+      }
+
+      function treeOf(definitions) {
+        const nodes = {};
+        const tree = {};
+        definitions.forEach(([id, value, left = null, right = null]) => {
+          nodes[id] = { value };
+          tree[id] = { left, right };
+        });
+        return { nodes, tree };
+      }
+
+      function makeSnapshot(tree, text, detail, line, extra = {}) {
+        return {
+          tree: cloneTree(tree),
+          text,
+          detail,
+          line,
+          current: null,
+          visited: [],
+          highlightIds: [],
+          targetIds: [],
+          warningIds: [],
+          answerIds: [],
+          labels: {},
+          stack: [],
+          ...extra,
+        };
+      }
+
+      function pushStep(steps, tree, text, detail, line, extra = {}) {
+        steps.push(makeSnapshot(tree, text, detail, line, extra));
+      }
+
+      function sceneWrap(svg, extra = '') {
+        return `<div class="tree-wrap">${svg}</div>${extra}`;
+      }
+
+      function chipList(items, className = '') {
+        if (!items || !items.length) return '<span class="empty">暂无</span>';
+        return items.map((item, i) => `<span class="chip${className ? ` ${className}` : ''}${i === items.length - 1 ? ' active' : ''}">${item}</span>`).join('');
+      }
+
+      function val(cfg, id) {
+        return id == null ? '—' : String(cfg.nodes[id]?.value ?? id);
+      }
+
+      function renderTree(cfg, state) {
+        const ids = Object.keys(state.tree);
+        const positions = cfg.positions;
+        const viewBox = cfg.viewBox || '0 0 520 300';
+        const active = new Set([...(state.highlightIds || []), state.current].filter(Boolean));
+        const visited = new Set(state.visited || []);
+        const targets = new Set(state.targetIds || []);
+        const warnings = new Set(state.warningIds || []);
+        const answers = new Set(state.answerIds || []);
+        let html = `<svg class="tree-svg" viewBox="${viewBox}" role="img" aria-label="二叉树算法动画">`;
+
+        ids.forEach((id) => {
+          const node = state.tree[id];
+          for (const [side, target] of [['left', node.left], ['right', node.right]]) {
+            if (!target || !state.tree[target] || !positions[id] || !positions[target]) continue;
+            const [x, y] = positions[id];
+            const [tx, ty] = positions[target];
+            html += `<line class="edge ${side}${active.has(id) || active.has(target) ? ' active' : ''}" x1="${x}" y1="${y + 22}" x2="${tx}" y2="${ty - 22}"></line>`;
+            html += `<text class="edge-label" x="${(x + tx) / 2 + (side === 'left' ? -6 : 6)}" y="${(y + ty) / 2}">${side === 'left' ? 'L' : 'R'}</text>`;
+          }
+        });
+
+        ids.forEach((id) => {
+          if (!positions[id]) return;
+          const [x, y] = positions[id];
+          let kind = 'node';
+          if (warnings.has(id)) kind += ' warning';
+          else if (answers.has(id)) kind += ' answer';
+          else if (active.has(id)) kind += ' current';
+          else if (targets.has(id)) kind += ' target';
+          else if (visited.has(id)) kind += ' done';
+          html += `<g class="${kind}"><circle cx="${x}" cy="${y}" r="22"></circle><text x="${x}" y="${y}">${val(cfg, id)}</text>`;
+          if (state.labels && state.labels[id] != null) html += `<text class="node-badge" x="${x}" y="${y + 36}">${state.labels[id]}</text>`;
+          html += '</g>';
+        });
+
+        if (!ids.length) html += `<text class="edge-label" x="260" y="145" text-anchor="middle">还没有创建节点</text>`;
+        html += '</svg>';
+        return html;
+      }
+
+      function renderCode(codeLines, activeLine) {
+        return codeLines.map((html, i) => `<div class="code-line${i + 1 === activeLine ? ' active' : ''}"><span class="line-no">${i + 1}</span><span class="code-text">${html || '&nbsp;'}</span></div>`).join('');
+      }
+
+      function item(name, value, tone = '') {
+        return `<div class="state-item"><div class="state-name">${name}</div><div class="state-value${tone ? ` ${tone}` : ''}">${value}</div></div>`;
+      }
+
+      function stackHtml(stack) {
+        if (!stack || !stack.length) return '<span class="empty">调用栈已清空</span>';
+        return stack.map((item, i) => `<span class="chip${i === stack.length - 1 ? ' active' : ''}">${item}</span>`).join('');
+      }
+
+      function tokenRow(values, classFn = () => '') {
+        return `<div class="token-row">${values.map((value, i) => `<span class="token ${classFn(i, value)}">${value}</span>`).join('')}</div>`;
+      }
+
+      function treeScene(cfg, state, extra = '', note = '蓝色 = 当前节点 · 绿色 = 已处理 · 橙色 = 目标') {
+        return sceneWrap(renderTree(cfg, state), extra) + `<div class="legend"><span class="legend-item"><i class="dot"></i>当前节点</span><span class="legend-item"><i class="dot done"></i>已处理</span><span class="legend-item"><i class="dot target"></i>目标或关键节点</span><span class="legend-item"><i class="dot warning"></i>错误位置</span></div>`;
+      }
+
+      function standardTree(definitions, positions, viewBox = '0 0 520 300') {
+        const built = treeOf(definitions);
+        return { ...built, positions, viewBox };
+      }
+
+      const layouts = {
+        small: standardTree([
+          ['a', 1, 'b', 'c'], ['b', 2, 'd', 'e'], ['c', 3, 'f', 'g'],
+          ['d', 4], ['e', 5], ['f', 6], ['g', 7],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [72, 225], e: [198, 225], f: [322, 225], g: [448, 225] }),
+        height: standardTree([
+          ['a', 3, 'b', 'c'], ['b', 9], ['c', 20, 'd', 'e'], ['d', 15], ['e', 7],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [322, 225], e: [448, 225] }),
+        invert: standardTree([
+          ['a', 4, 'b', 'c'], ['b', 2, 'd', 'e'], ['c', 7, 'f', 'g'],
+          ['d', 1], ['e', 3], ['f', 6], ['g', 9],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [72, 225], e: [198, 225], f: [322, 225], g: [448, 225] }),
+        symmetric: standardTree([
+          ['a', 1, 'b', 'c'], ['b', 2, 'd', 'e'], ['c', 2, 'f', 'g'],
+          ['d', 3], ['e', 4], ['f', 4], ['g', 3],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [72, 225], e: [198, 225], f: [322, 225], g: [448, 225] }),
+        diameter: standardTree([
+          ['a', 1, 'b', 'c'], ['b', 2, 'd', 'e'], ['c', 3], ['d', 4], ['e', 5],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [72, 225], e: [198, 225] }),
+        level: standardTree([
+          ['a', 3, 'b', 'c'], ['b', 9], ['c', 20, 'd', 'e'], ['d', 15], ['e', 7],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [322, 225], e: [448, 225] }),
+        invalidBst: standardTree([
+          ['a', 5, 'b', 'c'], ['b', 1], ['c', 4, 'd', 'e'], ['d', 3], ['e', 6],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [322, 225], e: [448, 225] }),
+        kth: standardTree([
+          ['a', 5, 'b', 'c'], ['b', 3, 'd', 'e'], ['c', 6], ['d', 2, 'f', null], ['e', 4], ['f', 1],
+        ], { a: [260, 38], b: [135, 118], c: [385, 118], d: [70, 205], e: [198, 205], f: [42, 285] }, '0 0 520 340'),
+        rightView: standardTree([
+          ['a', 1, 'b', 'c'], ['b', 2, null, 'd'], ['c', 3, null, 'e'], ['d', 5], ['e', 4],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [198, 225], e: [448, 225] }),
+        prefix: standardTree([
+          ['a', 10, 'b', 'c'], ['b', 5, 'd', 'e'], ['c', -3, null, 'f'], ['d', 3, 'g', 'h'], ['e', 2, null, 'i'],
+          ['f', 11], ['g', 3], ['h', -2], ['i', 1],
+        ], { a: [260, 38], b: [135, 115], c: [385, 115], d: [72, 193], e: [198, 193], f: [448, 193], g: [42, 280], h: [105, 280], i: [230, 280] }, '0 0 520 330'),
+        lca: standardTree([
+          ['a', 3, 'b', 'c'], ['b', 5, 'd', 'e'], ['c', 1, 'f', 'g'], ['d', 6], ['e', 2, 'h', 'i'], ['f', 0], ['g', 8], ['h', 7], ['i', 4],
+        ], { a: [260, 38], b: [135, 115], c: [385, 115], d: [72, 193], e: [198, 193], f: [322, 193], g: [448, 193], h: [165, 280], i: [230, 280] }, '0 0 520 330'),
+        maxPath: standardTree([
+          ['a', -10, 'b', 'c'], ['b', 9], ['c', 20, 'd', 'e'], ['d', 15], ['e', 7],
+        ], { a: [260, 42], b: [135, 132], c: [385, 132], d: [322, 225], e: [448, 225] }),
+      };
+
+      function build94() {
+        const cfg = layouts.small;
+        const steps = [];
+        const output = [];
+        const stack = [];
+        const visited = [];
+        pushStep(steps, cfg.tree, '准备开始中序遍历', '顺序是：左子树 → 当前节点 → 右子树。', 1, { stack: [], output: [] });
+        function dfs(id) {
+          if (!id) {
+            pushStep(steps, cfg.tree, '遇到 null，返回', '空子树不产生输出。', 2, { current: stack[stack.length - 1] || null, stack: [...stack], output: [...output], visited: [...visited] });
+            return;
+          }
+          stack.push(id);
+          pushStep(steps, cfg.tree, `进入节点 ${val(cfg, id)}`, '先递归处理左子树。', 1, { current: id, stack: [...stack], output: [...output], visited: [...visited] });
+          dfs(cfg.tree[id].left);
+          visited.push(id);
+          output.push(val(cfg, id));
+          pushStep(steps, cfg.tree, `访问节点 ${val(cfg, id)}`, `把 ${val(cfg, id)} 加入中序结果。`, 4, { current: id, stack: [...stack], output: [...output], visited: [...visited] });
+          dfs(cfg.tree[id].right);
+          stack.pop();
+          pushStep(steps, cfg.tree, `返回 ${val(cfg, id)}`, '当前节点的左右子树都处理完了。', 5, { current: stack[stack.length - 1] || null, stack: [...stack], output: [...output], visited: [...visited] });
+        }
+        dfs('a');
+        return {
+          key: '94', eyebrow: 'LEETCODE 94 · INORDER DFS', title: '二叉树的中序遍历', subtitle: '把“左 → 根 → 右”翻译成递归调用顺序。', sceneTitle: '递归遍历树', sceneNote: '绿色节点 = 已加入结果', cfg, steps,
+          code: ['<span class="kw">void</span> inorder(root) {', '    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span>;', '    inorder(root.left);', '    result.add(root.val);', '    inorder(root.right);', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="strip"><span class="strip-label">中序输出</span><span class="strip-value">${(state.output || []).join(' → ') || '—'}</span></div>`),
+          state: (state) => `<div class="state-grid">${item('当前节点', state.current ? val(cfg, state.current) : '—')}${item('输出长度', state.output?.length ?? 0, 'green')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">递归调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `inorder(${val(cfg, id)})`))}</div>`,
+          concepts: [['顺序', '左 → 根 → 右'], ['空节点', '直接返回'], ['结果', '访问根时加入'], ['关键', 'BST 中序天然有序']],
+        };
+      }
+
+      function build104() {
+        const cfg = layouts.height;
+        const steps = [];
+        const height = {};
+        const stack = [];
+        pushStep(steps, cfg.tree, '准备计算最大深度', 'dfs(root) 返回当前子树的高度。', 1, { stack: [], labels: {} });
+        function dfs(id) {
+          if (!id) {
+            pushStep(steps, cfg.tree, '空节点高度 = 0', '递归到 null 时返回基础值 0。', 2, { current: stack[stack.length - 1] || null, stack: [...stack], labels: { ...height } });
+            return 0;
+          }
+          stack.push(id);
+          pushStep(steps, cfg.tree, `进入 ${val(cfg, id)}`, '先拿到左子树高度，再拿右子树高度。', 1, { current: id, stack: [...stack], labels: { ...height } });
+          const left = dfs(cfg.tree[id].left);
+          pushStep(steps, cfg.tree, `${val(cfg, id)} 的左高度 = ${left}`, '左子树已经返回，继续计算右子树。', 3, { current: id, stack: [...stack], leftHeight: left, labels: { ...height } });
+          const right = dfs(cfg.tree[id].right);
+          const h = Math.max(left, right) + 1;
+          height[id] = h;
+          pushStep(steps, cfg.tree, `height(${val(cfg, id)}) = ${h}`, `max(${left}, ${right}) + 1 = ${h}。`, 5, { current: id, stack: [...stack], leftHeight: left, rightHeight: right, labels: Object.fromEntries(Object.entries(height).map(([k, v]) => [k, `h=${v}`])) });
+          stack.pop();
+          pushStep(steps, cfg.tree, `${val(cfg, id)} 返回高度 ${h}`, '把当前子树高度交给父节点。', 6, { current: stack[stack.length - 1] || null, stack: [...stack], labels: Object.fromEntries(Object.entries(height).map(([k, v]) => [k, `h=${v}`])) });
+          return h;
+        }
+        const result = dfs('a');
+        pushStep(steps, cfg.tree, `整棵树最大深度 = ${result}`, '根节点返回的高度就是答案。', 6, { current: null, stack: [], labels: Object.fromEntries(Object.entries(height).map(([k, v]) => [k, `h=${v}`])) });
+        return {
+          key: '104', eyebrow: 'LEETCODE 104 · POSTORDER HEIGHT', title: '二叉树的最大深度', subtitle: '先向下拿左右高度，回到当前节点时取较大值再加 1。', sceneTitle: '后序计算高度', sceneNote: '节点下方显示已经算出的 h', cfg, steps,
+          code: ['<span class="kw">int</span> dfs(root) {', '    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> 0;', '    <span class="kw">int</span> left = dfs(root.left);', '    <span class="kw">int</span> right = dfs(root.right);', '    <span class="kw">return</span> Math.max(left, right) + 1;', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>当前公式：</strong>max(${state.leftHeight ?? 'L'}, ${state.rightHeight ?? 'R'}) + 1</div>`),
+          state: (state) => `<div class="state-grid">${item('左高度', state.leftHeight ?? '—')}${item('右高度', state.rightHeight ?? '—')}${item('当前高度', state.current && state.labels?.[state.current] ? state.labels[state.current] : '—', 'green')}${item('返回含义', '子树高度')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">递归调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `dfs(${val(cfg, id)})`))}</div>`,
+          concepts: [['空节点', '高度为 0'], ['合并', 'max(left,right)+1'], ['遍历', '后序 DFS'], ['父节点', '只需要子树高度']],
+        };
+      }
+
+      function build226() {
+        const cfg = layouts.invert;
+        let tree = cloneTree(cfg.tree);
+        const steps = [];
+        const stack = [];
+        pushStep(steps, tree, '准备翻转二叉树', '每个节点只需要交换 left 和 right。', 1, { stack: [] });
+        function dfs(id) {
+          if (!id) {
+            pushStep(steps, tree, '遇到 null，返回', '空子树无需交换。', 2, { current: stack[stack.length - 1] || null, stack: [...stack] });
+            return;
+          }
+          stack.push(id);
+          pushStep(steps, tree, `处理节点 ${val(cfg, id)}`, '保存左右孩子，准备交换。', 1, { current: id, stack: [...stack] });
+          const before = `${val(cfg, tree[id].left)} / ${val(cfg, tree[id].right)}`;
+          const temp = tree[id].left;
+          tree[id].left = tree[id].right;
+          tree[id].right = temp;
+          pushStep(steps, tree, `交换 ${val(cfg, id)} 的左右指针`, `${before} → ${val(cfg, tree[id].left)} / ${val(cfg, tree[id].right)}。`, 3, { current: id, stack: [...stack], visited: [...stack] });
+          dfs(tree[id].left);
+          dfs(tree[id].right);
+          stack.pop();
+          pushStep(steps, tree, `节点 ${val(cfg, id)} 翻转完成`, '递归处理交换后的左右子树。', 6, { current: stack[stack.length - 1] || null, stack: [...stack], visited: [...stack] });
+        }
+        dfs('a');
+        return {
+          key: '226', eyebrow: 'LEETCODE 226 · POINTER SWAP', title: '翻转二叉树', subtitle: '先交换当前节点的两个孩子，再递归处理交换后的子树。', sceneTitle: '指针交换过程', sceneNote: '蓝色 = 当前节点 · 绿色 = 已进入路径', cfg, steps,
+          code: ['<span class="kw">TreeNode</span> invertTree(root) {', '    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">null</span>;', '    temp = root.left; swap(root.left, root.right);', '    invertTree(root.left);', '    invertTree(root.right);', '    <span class="kw">return</span> root;', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>交换动作：</strong>当前节点的 left ↔ right，然后沿新的指针继续递归。</div>`),
+          state: (state) => `<div class="state-grid">${item('当前节点', state.current ? val(cfg, state.current) : '—')}${item('当前 left', state.current ? val(cfg, state.tree[state.current]?.left) : '—', 'blue')}${item('当前 right', state.current ? val(cfg, state.tree[state.current]?.right) : '—', 'green')}${item('最终目标', '镜像树')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">递归调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `invert(${val(cfg, id)})`))}</div>`,
+          concepts: [['当前节点', '交换左右指针'], ['注意', '递归的是交换后的孩子'], ['空节点', '直接返回'], ['结果', '得到镜像树']],
+        };
+      }
+
+      function build101() {
+        const cfg = layouts.symmetric;
+        const steps = [];
+        const stack = [];
+        const checks = [];
+        function mirror(left, right) {
+          if (!left && !right) {
+            pushStep(steps, cfg.tree, '两个位置都是 null', '镜像位置同时为空，返回 true。', 2, { current: null, highlightIds: [], stack: [...stack], checks: [...checks], pair: 'null ↔ null' });
+            return true;
+          }
+          if (!left || !right || val(cfg, left) !== val(cfg, right)) {
+            const pair = `${val(cfg, left)} ↔ ${val(cfg, right)}`;
+            checks.push({ pair, ok: false });
+            pushStep(steps, cfg.tree, `比较 ${pair}：不对称`, '一边为空，或两个节点值不相等。', 3, { current: left || right, highlightIds: [left, right].filter(Boolean), warningIds: [left, right].filter(Boolean), stack: [...stack], checks: [...checks], pair });
+            return false;
+          }
+          stack.push(`${val(cfg, left)} ↔ ${val(cfg, right)}`);
+          const pair = `${val(cfg, left)} ↔ ${val(cfg, right)}`;
+          checks.push({ pair, ok: true });
+          pushStep(steps, cfg.tree, `比较 ${pair}：值相等`, '接下来比较外侧和内侧的镜像位置。', 4, { current: left, highlightIds: [left, right], targetIds: [left, right], stack: [...stack], checks: [...checks], pair });
+          const outer = mirror(cfg.tree[left].left, cfg.tree[right].right);
+          if (!outer) return false;
+          const inner = mirror(cfg.tree[left].right, cfg.tree[right].left);
+          stack.pop();
+          pushStep(steps, cfg.tree, `镜像对 ${pair} 返回 ${inner}`, '外侧、内侧都通过后，当前这一对节点才通过。', 6, { current: left, highlightIds: [left, right], stack: [...stack], checks: [...checks], pair, result: inner });
+          return inner;
+        }
+        pushStep(steps, cfg.tree, '从根的左右子树开始比较', '左树的左边要对应右树的右边，左树的右边要对应右树的左边。', 1, { stack: [], checks: [] });
+        const result = mirror('b', 'c');
+        pushStep(steps, cfg.tree, result ? '整棵树轴对称' : '整棵树不对称', '所有镜像位置都通过比较。', 6, { current: null, stack: [], checks: [...checks], result });
+        return {
+          key: '101', eyebrow: 'LEETCODE 101 · MIRROR DFS', title: '对称二叉树', subtitle: '不是比较一个节点，而是同时比较一对互为镜像的节点。', sceneTitle: '左右镜像配对', sceneNote: '橙色 = 当前要比较的一对', cfg, steps,
+          code: ['<span class="kw">boolean</span> mirror(left, right) {', '    <span class="kw">if</span> (left == <span class="kw">null</span> || right == <span class="kw">null</span>)', '        <span class="kw">return</span> left == right;', '    <span class="kw">if</span> (left.val != right.val) <span class="kw">return</span> false;', '    outer = mirror(left.left, right.right);', '    inner = mirror(left.right, right.left);', '    <span class="kw">return</span> outer &amp;&amp; inner;', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>当前配对：</strong>${state.pair || '—'}<br>外侧 ↔ 外侧，内侧 ↔ 内侧</div>`),
+          state: (state) => `<div class="state-grid">${item('当前配对', state.pair || '—')}${item('比较结果', state.result == null ? '进行中' : (state.result ? 'true' : 'false'), state.result === false ? 'red' : 'green')}${item('已检查', state.checks?.length ?? 0)}${item('返回含义', '是否镜像')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">镜像比较栈</div></div><div class="stack">${stackHtml(state.stack || [])}</div>`,
+          concepts: [['比较对象', '两个节点'], ['外侧', 'left.left ↔ right.right'], ['内侧', 'left.right ↔ right.left'], ['空值', '两边都空才相等']],
+        };
+      }
+
+      function build543() {
+        const cfg = layouts.diameter;
+        const steps = [];
+        const heights = {};
+        const stack = [];
+        let diameter = 0;
+        pushStep(steps, cfg.tree, '准备计算直径', 'dfs 返回单侧高度，diameter 记录左右高度之和。', 1, { stack: [], labels: {} });
+        function dfs(id) {
+          if (!id) {
+            pushStep(steps, cfg.tree, '空节点高度 = 0', '叶子下面的空子树贡献 0。', 2, { current: stack[stack.length - 1] || null, stack: [...stack], labels: { ...heights }, diameter });
+            return 0;
+          }
+          stack.push(id);
+          const left = dfs(cfg.tree[id].left);
+          const right = dfs(cfg.tree[id].right);
+          const h = Math.max(left, right) + 1;
+          heights[id] = h;
+          diameter = Math.max(diameter, left + right);
+          pushStep(steps, cfg.tree, `处理节点 ${val(cfg, id)}`, `left=${left}，right=${right}，经过当前节点的路径长度=${left + right}。`, 5, { current: id, stack: [...stack], leftHeight: left, rightHeight: right, diameter, labels: Object.fromEntries(Object.entries(heights).map(([k, v]) => [k, `h=${v}`])) });
+          stack.pop();
+          pushStep(steps, cfg.tree, `${val(cfg, id)} 返回单侧高度 ${h}`, '向父节点只能带一条最长边，不能带左右两边。', 6, { current: stack[stack.length - 1] || null, stack: [...stack], diameter, labels: Object.fromEntries(Object.entries(heights).map(([k, v]) => [k, `h=${v}`])) });
+          return h;
+        }
+        dfs('a');
+        pushStep(steps, cfg.tree, `最大直径 = ${diameter}`, '答案按边数计算，完整路径在某个节点处左右汇合。', 5, { current: null, stack: [], diameter, labels: Object.fromEntries(Object.entries(heights).map(([k, v]) => [k, `h=${v}`])) });
+        return {
+          key: '543', eyebrow: 'LEETCODE 543 · POSTORDER DIAMETER', title: '二叉树的直径', subtitle: '返回单侧高度，更新答案时才允许左右两侧在当前节点汇合。', sceneTitle: '高度与直径', sceneNote: '节点下方显示 h，答案按边数计算', cfg, steps,
+          code: ['<span class="kw">int</span> dfs(root) {', '    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> 0;', '    left = dfs(root.left);', '    right = dfs(root.right);', '    answer = max(answer, left + right);', '    <span class="kw">return</span> max(left, right) + 1;', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>答案更新：</strong>max(已有答案, ${state.leftHeight ?? 'L'} + ${state.rightHeight ?? 'R'})</div>`),
+          state: (state) => `<div class="state-grid">${item('左高度', state.leftHeight ?? '—')}${item('右高度', state.rightHeight ?? '—')}${item('当前直径', state.diameter ?? 0, 'orange')}${item('返回父节点', '单侧高度')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">后序调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `dfs(${val(cfg, id)})`))}</div>`,
+          concepts: [['返回值', '单侧高度'], ['答案', 'left + right'], ['单位', '边数'], ['核心', '后序合并']],
+        };
+      }
+
+      function build102() {
+        const cfg = layouts.level;
+        const steps = [];
+        const queue = [];
+        const levels = [];
+        const visited = [];
+        pushStep(steps, cfg.tree, '根节点入队', 'BFS 用队列保证一层一层处理。', 1, { queue: ['a'], levels: [], visited: [], level: 0 });
+        while (queue.length || (queue.push('a') && queue.length)) {
+          const size = queue.length;
+          const currentLevel = [];
+          pushStep(steps, cfg.tree, `开始处理第 ${levels.length} 层`, `先固定 size = ${size}，这一轮只处理当前层。`, 3, { queue: [...queue], levels: [...levels], visited: [...visited], level: levels.length });
+          for (let i = 0; i < size; i += 1) {
+            const id = queue.shift();
+            currentLevel.push(val(cfg, id));
+            visited.push(id);
+            pushStep(steps, cfg.tree, `出队 ${val(cfg, id)}`, `把 ${val(cfg, id)} 加入第 ${levels.length} 层结果。`, 4, { current: id, queue: [...queue], levels: [...levels, [...currentLevel]], visited: [...visited], level: levels.length });
+            for (const child of [cfg.tree[id].left, cfg.tree[id].right]) if (child) queue.push(child);
+            pushStep(steps, cfg.tree, `把 ${val(cfg, id)} 的孩子入队`, '新入队的节点属于下一层，不在本轮处理。', 6, { current: id, queue: [...queue], levels: [...levels, [...currentLevel]], visited: [...visited], level: levels.length });
+          }
+          levels.push(currentLevel);
+          pushStep(steps, cfg.tree, `第 ${levels.length - 1} 层完成`, `得到 [${currentLevel.join(', ')}]。`, 7, { current: null, queue: [...queue], levels: [...levels], visited: [...visited], level: levels.length - 1 });
+          if (!queue.length) break;
+        }
+        return {
+          key: '102', eyebrow: 'LEETCODE 102 · BFS BY LEVEL', title: '二叉树的层序遍历', subtitle: '每一轮先记住 queue.size()，这样新入队的节点自然留到下一层。', sceneTitle: '队列与层结果', sceneNote: '当前队列从左到右', cfg, steps,
+          code: ['queue.offer(root);', '<span class="kw">while</span> (!queue.isEmpty()) {', '    size = queue.size();', '    node = queue.poll();', '    level.add(node.val);', '    queue.offer(node.left/right);', '    result.add(level);', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="strip"><span class="strip-label">queue</span><div class="queue">${state.queue?.length ? state.queue.map((id) => `<span class="chip">${val(cfg, id)}</span>`).join('') : '<span class="empty">空</span>'}</div></div><div class="strip"><span class="strip-label">结果</span><span class="strip-value">${(state.levels || []).map((level) => `[${level.join(',')}]`).join('  ') || '—'}</span></div>`),
+          state: (state) => `<div class="state-grid">${item('当前层', state.level ?? '—')}${item('当前层数量', state.levels?.[state.level]?.length ?? '—')}${item('队列长度', state.queue?.length ?? 0, 'blue')}${item('已访问', state.visited?.length ?? 0, 'green')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">层序结果</div></div><div class="stack">${(state.levels || []).map((level, i) => `<span class="chip${i === state.level ? ' active' : ' done'}">L${i}: ${level.join(',')}</span>`).join('') || '<span class="empty">暂无</span>'}</div>`,
+          concepts: [['队列', '先进先出'], ['关键', '固定 size'], ['一轮', '只处理一层'], ['结果', 'List<List<Integer>>']],
+        };
+      }
+
+      function build108() {
+        const values = [-10, -3, 0, 5, 9];
+        const definitions = values.map((value, i) => [`n${i}`, value]);
+        const cfg = { ...treeOf(definitions), positions: { n0: [72, 225], n1: [135, 132], n2: [260, 42], n3: [385, 132], n4: [448, 225] } };
+        const tree = {};
+        const stack = [];
+        const steps = [];
+        pushStep(steps, tree, '准备从有序数组构造平衡 BST', '每次取当前区间的中点作为根。', 1, { values, range: [0, 4], stack: [] });
+        function build(left, right, parent = null, side = null) {
+          if (left > right) {
+            pushStep(steps, tree, '区间为空，返回 null', `[${left}, ${right}] 没有元素。`, 2, { values, range: [left, right], stack: [...stack] });
+            return null;
+          }
+          const mid = left + Math.floor((right - left) / 2);
+          const id = `n${mid}`;
+          tree[id] = { left: null, right: null };
+          if (parent) tree[parent][side] = id;
+          stack.push(`[${left},${right}]`);
+          pushStep(steps, tree, `取中点 ${values[mid]} 作为根`, `当前区间 [${left}, ${right}]，mid = ${mid}。`, 3, { values, range: [left, right], mid, current: id, stack: [...stack] });
+          pushStep(steps, tree, `递归构造 ${values[mid]} 的左子树`, `[${left}, ${mid - 1}] → left。`, 5, { values, range: [left, right], mid, current: id, stack: [...stack] });
+          build(left, mid - 1, id, 'left');
+          pushStep(steps, tree, `递归构造 ${values[mid]} 的右子树`, `[${mid + 1}, ${right}] → right。`, 6, { values, range: [left, right], mid, current: id, stack: [...stack] });
+          build(mid + 1, right, id, 'right');
+          stack.pop();
+          pushStep(steps, tree, `返回节点 ${values[mid]}`, '左右区间都处理完成。', 8, { values, range: [left, right], mid, current: parent, stack: [...stack] });
+          return id;
+        }
+        build(0, values.length - 1);
+        return {
+          key: '108', eyebrow: 'LEETCODE 108 · DIVIDE & CONQUER', title: '将有序数组转换为平衡 BST', subtitle: '中点做根，左区间递归成左子树，右区间递归成右子树。', sceneTitle: '区间分治', sceneNote: '绿色 = 当前区间 · 橙色 = mid', cfg, steps,
+          code: ['build(nums, left, right) {', '    <span class="kw">if</span> (left &gt; right) <span class="kw">return</span> <span class="kw">null</span>;', '    mid = left + (right - left) / 2;', '    root = <span class="kw">new</span> TreeNode(nums[mid]);', '    root.left = build(left, mid - 1);', '    root.right = build(mid + 1, right);', '    <span class="kw">return</span> root;', '}'],
+          scene: (state) => treeScene(cfg, state, `${tokenRow(values, (i) => state.range && i >= state.range[0] && i <= state.range[1] ? (i === state.mid ? 'mid' : 'range') : '')}<div class="formula"><strong>当前区间：</strong>${state.range ? `[${state.range[0]}, ${state.range[1]}]` : '—'}；<strong>mid：</strong>${state.mid ?? '—'}</div>`),
+          state: (state) => `<div class="state-grid">${item('left', state.range?.[0] ?? '—')}${item('right', state.range?.[1] ?? '—')}${item('mid', state.mid ?? '—', 'orange')}${item('节点数', Object.keys(state.tree).length, 'green')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">区间栈</div></div><div class="stack">${stackHtml(state.stack || [])}</div>`,
+          concepts: [['根节点', '区间中点'], ['左子树', '[left, mid-1]'], ['右子树', '[mid+1, right]'], ['平衡', '两边规模接近']],
+        };
+      }
+
+      function build98() {
+        const cfg = layouts.invalidBst;
+        const steps = [];
+        const stack = [];
+        const bounds = {};
+        pushStep(steps, cfg.tree, '准备验证 BST', '每个节点都必须满足自己的上下界，不只是比较亲子节点。', 1, { stack: [] });
+        function dfs(id, low, high) {
+          if (!id) {
+            pushStep(steps, cfg.tree, '空节点合法', `空子树满足 ${low} < node < ${high}。`, 2, { current: stack[stack.length - 1] || null, stack: [...stack], bounds: { ...bounds } });
+            return true;
+          }
+          stack.push(id);
+          bounds[id] = `${low} < ${val(cfg, id)} < ${high}`;
+          pushStep(steps, cfg.tree, `检查节点 ${val(cfg, id)}`, `它必须落在开区间 (${low}, ${high}) 内。`, 1, { current: id, stack: [...stack], bounds: { ...bounds } });
+          const number = Number(val(cfg, id));
+          if (number <= low || number >= high) {
+            pushStep(steps, cfg.tree, `节点 ${val(cfg, id)} 越界，BST 不合法`, `${number} 不满足 ${low} < ${number} < ${high}。`, 3, { current: id, stack: [...stack], bounds: { ...bounds }, warningIds: [id], result: false });
+            return false;
+          }
+          if (!dfs(cfg.tree[id].left, low, number)) return false;
+          if (!dfs(cfg.tree[id].right, number, high)) return false;
+          stack.pop();
+          pushStep(steps, cfg.tree, `节点 ${val(cfg, id)} 的子树合法`, '把 true 返回给上一层。', 6, { current: stack[stack.length - 1] || null, stack: [...stack], bounds: { ...bounds }, visited: [...stack] });
+          return true;
+        }
+        const result = dfs('a', -Infinity, Infinity);
+        pushStep(steps, cfg.tree, result ? 'BST 合法' : 'BST 不合法', '只要有一个节点违反自己的范围，整棵树就是非法的。', 3, { current: null, stack: [], bounds: { ...bounds }, result, warningIds: result ? [] : ['d'] });
+        return {
+          key: '98', eyebrow: 'LEETCODE 98 · RANGE VALIDATION', title: '验证二叉搜索树', subtitle: '上下界会随着递归路径收紧，左子树和右子树拥有不同的合法范围。', sceneTitle: '上下界传播', sceneNote: '红色 = 第一个越界节点', cfg, steps,
+          code: ['check(root, low, high) {', '    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> true;', '    <span class="kw">if</span> (root.val &lt;= low || root.val &gt;= high)', '        <span class="kw">return</span> false;', '    check(root.left, low, root.val);', '    check(root.right, root.val, high);', '}'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>当前约束：</strong>${state.current && state.bounds?.[state.current] ? state.bounds[state.current] : '—'}</div>`),
+          state: (state) => `<div class="state-grid">${item('当前节点', state.current ? val(cfg, state.current) : '—')}${item('合法范围', state.current && state.bounds?.[state.current] ? state.bounds[state.current] : '—')}${item('结果', state.result == null ? '进行中' : (state.result ? 'true' : 'false'), state.result === false ? 'red' : 'green')}${item('判断方式', '整棵子树')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">递归路径</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `${val(cfg, id)}: ${state.bounds?.[id] || ''}`))}</div>`,
+          concepts: [['左子树', '(low, root.val)'], ['右子树', '(root.val, high)'], ['严格', '不能等于边界'], ['陷阱', '不能只看父子']],
+        };
+      }
+
+      function build230() {
+        const cfg = layouts.kth;
+        const steps = [];
+        const stack = [];
+        const visited = [];
+        const k = 3;
+        let count = k;
+        let result = null;
+        pushStep(steps, cfg.tree, `准备找第 ${k} 小`, 'BST 的中序遍历是升序，所以按中序访问并倒数。', 1, { stack: [], visited: [], count });
+        function dfs(id) {
+          if (!id || result != null) return;
+          stack.push(id);
+          dfs(cfg.tree[id].left);
+          if (result != null) return;
+          count -= 1;
+          visited.push(id);
+          pushStep(steps, cfg.tree, `中序访问 ${val(cfg, id)}，count--`, `还需要访问 ${count} 个节点。`, 4, { current: id, stack: [...stack], visited: [...visited], count, targetIds: count === 0 ? [id] : [] });
+          if (count === 0) {
+            result = val(cfg, id);
+            pushStep(steps, cfg.tree, `找到第 ${k} 小：${result}`, 'count 减到 0，答案确定。', 5, { current: id, stack: [...stack], visited: [...visited], count, result, targetIds: [id] });
+            return;
+          }
+          dfs(cfg.tree[id].right);
+          stack.pop();
+        }
+        dfs('a');
+        return {
+          key: '230', eyebrow: 'LEETCODE 230 · BST INORDER', title: 'BST 中第 K 小的元素', subtitle: '中序遍历天然升序；每访问一个节点就执行一次 count--。', sceneTitle: '中序计数', sceneNote: '橙色 = 第 K 小答案', cfg, steps,
+          code: ['dfs(root.left);', '<span class="kw">if</span> (count == 0) <span class="kw">return</span>;', '--count;', '<span class="kw">if</span> (count == 0) result = root.val;', 'dfs(root.right);'],
+          scene: (state) => treeScene(cfg, state, `<div class="strip"><span class="strip-label">中序访问</span><span class="strip-value">${(state.visited || []).map((id) => val(cfg, id)).join(' → ') || '—'}</span></div>`),
+          state: (state) => `<div class="state-grid">${item('K', k)}${item('剩余 count', state.count ?? k, 'orange')}${item('当前节点', state.current ? val(cfg, state.current) : '—')}${item('答案', state.result ?? '—', 'green')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">中序递归栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `dfs(${val(cfg, id)})`))}</div>`,
+          concepts: [['顺序', '中序升序'], ['动作', '访问就 count--'], ['停止', 'count == 0'], ['Java', '用成员变量共享状态']],
+        };
+      }
+
+      function build199() {
+        const cfg = layouts.rightView;
+        const steps = [];
+        const stack = [];
+        const result = [];
+        const firstAtDepth = {};
+        pushStep(steps, cfg.tree, '从根开始右优先 DFS', '同一层先看右边，第一次遇到的节点就是右视图。', 1, { stack: [], result: [] });
+        function dfs(id, depth) {
+          if (!id) return;
+          stack.push(id);
+          if (firstAtDepth[depth] == null) {
+            firstAtDepth[depth] = id;
+            result.push(val(cfg, id));
+            pushStep(steps, cfg.tree, `深度 ${depth} 第一次遇到 ${val(cfg, id)}`, '右优先保证它就是这一层最右边可见的节点。', 4, { current: id, stack: [...stack], result: [...result], targetIds: [id], depth });
+          } else {
+            pushStep(steps, cfg.tree, `访问深度 ${depth} 的 ${val(cfg, id)}`, `这一层已经记录 ${val(cfg, firstAtDepth[depth])}，当前节点被遮住。`, 5, { current: id, stack: [...stack], result: [...result], depth });
+          }
+          dfs(cfg.tree[id].right, depth + 1);
+          dfs(cfg.tree[id].left, depth + 1);
+          stack.pop();
+        }
+        dfs('a', 0);
+        pushStep(steps, cfg.tree, '右视图生成完成', `从上到下可见：${result.join(' → ')}。`, 6, { current: null, stack: [], result: [...result], targetIds: Object.values(firstAtDepth) });
+        return {
+          key: '199', eyebrow: 'LEETCODE 199 · RIGHT-FIRST DFS', title: '二叉树的右视图', subtitle: '右优先 DFS：每一层第一次遇到的节点，就是从右侧看到的节点。', sceneTitle: '每层第一次访问', sceneNote: '橙色节点组成右视图', cfg, steps,
+          code: ['dfs(root, depth);', '<span class="kw">if</span> (depth == result.size())', '    result.add(root.val);', 'dfs(root.right, depth + 1);', 'dfs(root.left, depth + 1);'],
+          scene: (state) => treeScene(cfg, state, `<div class="strip"><span class="strip-label">右视图</span><span class="strip-value">${(state.result || []).join(' → ') || '—'}</span></div>`),
+          state: (state) => `<div class="state-grid">${item('当前深度', state.depth ?? '—')}${item('当前节点', state.current ? val(cfg, state.current) : '—')}${item('已记录层数', state.result?.length ?? 0, 'orange')}${item('遍历方向', '右 → 左')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">右优先调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `dfs(${val(cfg, id)})`))}</div>`,
+          concepts: [['顺序', '右 → 左'], ['每层', '只取第一次'], ['遮挡', '左侧可能被忽略'], ['结果', '从上到下排列']],
+        };
+      }
+
+      function build437() {
+        const cfg = layouts.prefix;
+        const steps = [];
+        const stack = [];
+        const prefix = { 0: 1 };
+        const path = [];
+        const target = 8;
+        let currentSum = 0;
+        let result = 0;
+        pushStep(steps, cfg.tree, '准备用前缀和统计路径', `目标和 target = ${target}，先放入 prefix[0] = 1。`, 1, { stack: [], prefix: { ...prefix }, result, target });
+        function dfs(id, sum) {
+          if (!id) return;
+          stack.push(id);
+          path.push(id);
+          const nextSum = sum + Number(val(cfg, id));
+          currentSum = nextSum;
+          const needed = nextSum - target;
+          const matches = prefix[needed] || 0;
+          result += matches;
+          pushStep(steps, cfg.tree, `来到 ${val(cfg, id)}：前缀和 = ${nextSum}`, `需要找 ${needed}；历史上出现 ${matches} 次，所以新增 ${matches} 条路径。`, 4, { current: id, stack: [...stack], highlightIds: [...path], path: [...path], prefix: { ...prefix }, currentSum: nextSum, needed, matches, result, target });
+          prefix[nextSum] = (prefix[nextSum] || 0) + 1;
+          pushStep(steps, cfg.tree, `记录 prefix[${nextSum}] = ${prefix[nextSum]}`, '继续向下递归，当前路径的前缀和对孩子可见。', 5, { current: id, stack: [...stack], highlightIds: [...path], path: [...path], prefix: { ...prefix }, currentSum: nextSum, needed, matches, result, target });
+          dfs(cfg.tree[id].left, nextSum);
+          dfs(cfg.tree[id].right, nextSum);
+          prefix[nextSum] -= 1;
+          pushStep(steps, cfg.tree, `离开 ${val(cfg, id)}，撤销 prefix[${nextSum}]`, '回溯后，兄弟子树不能看到这条路径的前缀和。', 8, { current: stack[stack.length - 2] || null, stack: [...stack.slice(0, -1)], highlightIds: [...path.slice(0, -1)], path: [...path.slice(0, -1)], prefix: { ...prefix }, currentSum: sum, result, target });
+          path.pop();
+          stack.pop();
+        }
+        dfs('a', 0);
+        pushStep(steps, cfg.tree, `统计完成：共有 ${result} 条路径`, '进入节点时加入前缀和，离开节点时必须撤销。', 8, { current: null, stack: [], path: [], prefix: { ...prefix }, result, target });
+        return {
+          key: '437', eyebrow: 'LEETCODE 437 · PREFIX SUM + DFS', title: '路径总和 III', subtitle: '当前前缀和为 sum 时，查找历史 sum - target，就能数出以当前节点结尾的路径。', sceneTitle: '路径与前缀和', sceneNote: '蓝色路径 = 当前递归分支', cfg, steps,
+          code: ['currentSum += root.val;', 'count += prefix[currentSum - target];', 'prefix[currentSum]++;', 'dfs(root.left);', 'dfs(root.right);', 'prefix[currentSum]--;'],
+          scene: (state) => treeScene(cfg, state, `<div class="strip"><span class="strip-label">当前路径</span><span class="path">${(state.path || []).map((id) => val(cfg, id)).join(' → ') || '—'}</span></div><div class="map">${Object.entries(state.prefix || {}).map(([sum, count]) => `<span class="chip">${sum}: ${count}</span>`).join('') || '<span class="empty">空</span>'}</div><div class="formula"><strong>查找：</strong>${state.currentSum ?? '—'} − ${target} = ${state.needed ?? '—'}；命中 ${state.matches ?? 0} 次</div>`),
+          state: (state) => `<div class="state-grid">${item('target', target)}${item('currentSum', state.currentSum ?? '—', 'orange')}${item('新增路径', state.matches ?? 0, 'green')}${item('累计答案', state.result ?? 0, 'green')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">DFS 调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `dfs(${val(cfg, id)})`))}</div>`,
+          concepts: [['查找', 'sum - target'], ['进入节点', '加入 prefix'], ['离开节点', '撤销 prefix'], ['关键', '回溯隔离兄弟分支']],
+        };
+      }
+
+      function build236() {
+        const cfg = layouts.lca;
+        const steps = [];
+        const stack = [];
+        const returns = {};
+        const p = 'b';
+        const q = 'c';
+        function dfs(id) {
+          if (!id) return null;
+          stack.push(id);
+          if (id === p || id === q) {
+            returns[id] = id;
+            pushStep(steps, cfg.tree, `遇到目标节点 ${val(cfg, id)}`, '目标节点可以直接向上返回自己。', 2, { current: id, stack: [...stack], targetIds: [p, q], returns: { ...returns }, result: id });
+            stack.pop();
+            return id;
+          }
+          pushStep(steps, cfg.tree, `进入节点 ${val(cfg, id)}`, '先从左右子树寻找 p 或 q。', 1, { current: id, stack: [...stack], targetIds: [p, q], returns: { ...returns } });
+          const left = dfs(cfg.tree[id].left);
+          const right = dfs(cfg.tree[id].right);
+          if (left && right) {
+            returns[id] = id;
+            pushStep(steps, cfg.tree, `节点 ${val(cfg, id)} 左右都找到目标`, `${val(cfg, id)} 是最近公共祖先。`, 5, { current: id, stack: [...stack], targetIds: [p, q], answerIds: [id], returns: { ...returns }, result: id });
+            stack.pop();
+            return id;
+          }
+          const found = left || right;
+          returns[id] = found;
+          pushStep(steps, cfg.tree, `节点 ${val(cfg, id)} 返回 ${found ? val(cfg, found) : 'null'}`, found ? '只有一边找到目标，把那一边的返回值继续向上交给父节点。' : '左右都没找到目标。', 6, { current: id, stack: [...stack], targetIds: [p, q], returns: { ...returns }, result: found });
+          stack.pop();
+          return found;
+        }
+        const result = dfs('a');
+        pushStep(steps, cfg.tree, `最近公共祖先是 ${val(cfg, result)}`, 'p 和 q 分别从左右子树返回，在这里第一次汇合。', 5, { current: null, stack: [], targetIds: [p, q], answerIds: [result], returns: { ...returns }, result });
+        return {
+          key: '236', eyebrow: 'LEETCODE 236 · POSTORDER RETURN', title: '二叉树的最近公共祖先', subtitle: 'dfs 返回当前子树找到的目标节点；左右都找到时，当前节点就是 LCA。', sceneTitle: '返回值向上汇合', sceneNote: '橙色 = p / q · 红橙 = LCA', cfg, steps,
+          code: ['<span class="kw">if</span> (root == <span class="kw">null</span> || root == p || root == q)', '    <span class="kw">return</span> root;', 'left = lowestCommonAncestor(root.left, p, q);', 'right = lowestCommonAncestor(root.right, p, q);', '<span class="kw">if</span> (left &amp;&amp; right) <span class="kw">return</span> root;', '<span class="kw">return</span> left ? left : right;'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>当前返回值：</strong>${state.result ? val(cfg, state.result) : 'null'}<br>p = ${val(cfg, p)}，q = ${val(cfg, q)}</div>`),
+          state: (state) => `<div class="state-grid">${item('p', val(cfg, p), 'orange')}${item('q', val(cfg, q), 'orange')}${item('当前返回', state.result ? val(cfg, state.result) : 'null', 'green')}${item('LCA', state.answerIds?.length ? val(cfg, state.answerIds[0]) : '—', 'orange')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">后序调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `lca(${val(cfg, id)})`))}</div>`,
+          concepts: [['dfs 返回', 'p / q / null'], ['左右都找到', '当前节点是 LCA'], ['一边找到', '继续向上返回'], ['顺序', '后序 DFS']],
+        };
+      }
+
+      function build124() {
+        const cfg = layouts.maxPath;
+        const steps = [];
+        const stack = [];
+        const gains = {};
+        let answer = -Infinity;
+        pushStep(steps, cfg.tree, '准备计算最大路径和', 'dfs 返回向父节点延伸的最大单边贡献；answer 记录完整路径。', 1, { stack: [], gains: {}, answer });
+        function dfs(id) {
+          if (!id) return 0;
+          stack.push(id);
+          const leftRaw = dfs(cfg.tree[id].left);
+          const rightRaw = dfs(cfg.tree[id].right);
+          const left = Math.max(0, leftRaw);
+          const right = Math.max(0, rightRaw);
+          const through = left + Number(val(cfg, id)) + right;
+          answer = Math.max(answer, through);
+          const up = Number(val(cfg, id)) + Math.max(left, right);
+          gains[id] = up;
+          pushStep(steps, cfg.tree, `处理节点 ${val(cfg, id)}`, `左贡献=${left}，右贡献=${right}，经过当前节点=${through}。`, 6, { current: id, stack: [...stack], leftGain: left, rightGain: right, through, gains: { ...gains }, answer, labels: Object.fromEntries(Object.entries(gains).map(([k, v]) => [k, `up=${v}`])) });
+          stack.pop();
+          pushStep(steps, cfg.tree, `${val(cfg, id)} 向上返回 ${up}`, '向父节点只能选择一边，不能让路径分叉。', 8, { current: stack[stack.length - 1] || null, stack: [...stack], leftGain: left, rightGain: right, through, gains: { ...gains }, answer, labels: Object.fromEntries(Object.entries(gains).map(([k, v]) => [k, `up=${v}`])) });
+          return up;
+        }
+        dfs('a');
+        pushStep(steps, cfg.tree, `最大路径和 = ${answer}`, '完整答案允许在某个节点同时接上左右两边。', 7, { current: null, stack: [], gains: { ...gains }, answer, labels: Object.fromEntries(Object.entries(gains).map(([k, v]) => [k, `up=${v}`])) });
+        return {
+          key: '124', eyebrow: 'LEETCODE 124 · POSTORDER PATH', title: '二叉树中的最大路径和', subtitle: '向上返回单边贡献，更新答案时把左右贡献同时接到当前节点。', sceneTitle: '单边贡献与完整路径', sceneNote: '节点下方显示向上贡献', cfg, steps,
+          code: ['left = Math.max(0, dfs(root.left));', 'right = Math.max(0, dfs(root.right));', 'answer = Math.max(answer,', '    left + root.val + right);', '<span class="kw">return</span> root.val + Math.max(left, right);'],
+          scene: (state) => treeScene(cfg, state, `<div class="formula"><strong>当前路径：</strong>${state.leftGain ?? 'L'} + ${state.current ? val(cfg, state.current) : 'root'} + ${state.rightGain ?? 'R'} = ${state.through ?? '—'}<br><strong>全局答案：</strong>${state.answer === -Infinity ? '—' : state.answer}</div>`),
+          state: (state) => `<div class="state-grid">${item('左贡献', state.leftGain ?? '—')}${item('右贡献', state.rightGain ?? '—')}${item('经过当前', state.through ?? '—', 'orange')}${item('全局答案', state.answer === -Infinity ? '—' : state.answer, 'green')}</div><div class="panel-head" style="margin-top:16px;margin-bottom:0"><div class="panel-title">后序调用栈</div></div><div class="stack">${stackHtml((state.stack || []).map((id) => `dfs(${val(cfg, id)})`))}</div>`,
+          concepts: [['返回父节点', '只能选一边'], ['更新答案', '左右都可接'], ['负贡献', '用 0 截断'], ['初始化', '负无穷']],
+        };
+      }
+
+      const builders = { '94': build94, '104': build104, '226': build226, '101': build101, '543': build543, '102': build102, '108': build108, '98': build98, '230': build230, '199': build199, '437': build437, '236': build236, '124': build124 };
+      const requested = new URLSearchParams(location.search).get('problem') || '94';
+      const mode = (builders[requested] || builders['94'])();
+      const steps = mode.steps;
+      let index = 0;
+      let timer = null;
+
+      document.title = mode.title;
+      document.querySelector('#eyebrow').textContent = mode.eyebrow;
+      document.querySelector('#title').textContent = mode.title;
+      document.querySelector('#subtitle').textContent = mode.subtitle;
+      document.querySelector('#sceneTitle').textContent = mode.sceneTitle;
+      document.querySelector('#sceneNote').textContent = mode.sceneNote;
+      document.querySelector('#concepts').innerHTML = mode.concepts.map(([title, text]) => `<div class="explain-item"><strong>${title}</strong><span>${text}</span></div>`).join('');
+
+      function render() {
+        const state = steps[index];
+        document.querySelector('#scene').innerHTML = mode.scene(state);
+        document.querySelector('#statePanel').innerHTML = mode.state(state);
+        document.querySelector('#code').innerHTML = renderCode(mode.code, state.line);
+        document.querySelector('#eventText').textContent = state.text;
+        document.querySelector('#eventDetail').textContent = state.detail;
+        const total = steps.length - 1;
+        document.querySelector('#stepLabel').textContent = `${index + 1} / ${steps.length}`;
+        document.querySelector('#progressBar').style.width = `${total ? (index / total) * 100 : 100}%`;
+        document.querySelector('#prev').disabled = index === 0;
+        document.querySelector('#next').disabled = index === steps.length - 1;
+      }
+
+      function stop() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        document.querySelector('#play').textContent = '▶ 自动播放';
+      }
+
+      function next() {
+        if (index >= steps.length - 1) { stop(); return; }
+        index += 1;
+        render();
+      }
+
+      document.querySelector('#prev').addEventListener('click', () => { stop(); index = Math.max(0, index - 1); render(); });
+      document.querySelector('#next').addEventListener('click', next);
+      document.querySelector('#reset').addEventListener('click', () => { stop(); index = 0; render(); });
+      document.querySelector('#play').addEventListener('click', () => {
+        if (timer) { stop(); return; }
+        if (index >= steps.length - 1) index = 0;
+        document.querySelector('#play').textContent = 'Ⅱ 暂停';
+        timer = window.setInterval(() => { if (index >= steps.length - 1) stop(); else next(); }, 1100);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.target.matches('button, input, textarea')) return;
+        if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); next(); }
+        if (event.key === 'ArrowLeft') { event.preventDefault(); stop(); index = Math.max(0, index - 1); render(); }
+      });
+
+      render();
+    </script>
+  </body>
+</html>

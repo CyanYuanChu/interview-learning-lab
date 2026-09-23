@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>114 二叉树展开为链表：递归回溯图解</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --paper: light-dark(transparent, transparent);
+        --card: light-dark(transparent, #1b1e24);
+        --card-soft: light-dark(rgb(0 0 0 / 2.5%), rgb(255 255 255 / 4%));
+        --ink: light-dark(#3f4248, #e7e9ed);
+        --muted: light-dark(#7a7f88, #aeb4bf);
+        --line: light-dark(#e5e7eb, #363b45);
+        --blue: light-dark(#55799f, #8fb4dd);
+        --green: light-dark(#4f8a70, #8bc5a7);
+        --orange: light-dark(#b27c3d, #ddb27a);
+        --red: light-dark(#b35d65, #e49aa0);
+        --shadow: none;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+
+      html { background: transparent; }
+
+      body {
+        margin: 0;
+        padding: 8px 3px 18px;
+        color: var(--ink);
+        background: transparent;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: transparent;
+        color: var(--ink);
+        padding: 7px 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) { border-color: var(--blue); background: var(--card-soft); }
+      button:disabled { cursor: not-allowed; opacity: .42; }
+      button:focus-visible { outline: 3px solid #ffc14d; outline-offset: 2px; }
+
+      .demo {
+        width: min(980px, 100%);
+        margin: 0 auto;
+      }
+
+      .header,
+      .toolbar,
+      .panel,
+      .explain {
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .header { padding: 2px 0 12px; border-bottom: 1px solid var(--line); }
+
+      .eyebrow {
+        color: var(--blue);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .08em;
+      }
+
+      h1 { margin: 7px 0 6px; font-size: clamp(20px, 3vw, 27px); font-weight: 700; letter-spacing: -.035em; }
+      .subtitle { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 0;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .toolbar .primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+      .toolbar .danger { border-color: #f1b8bd; color: var(--red); }
+
+      .progress {
+        flex: 1;
+        min-width: 100px;
+        height: 5px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: var(--card-soft);
+      }
+
+      .progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .28s ease; }
+      .step-label { min-width: 76px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; text-align: right; }
+
+      .event {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 11px;
+        align-items: center;
+        margin-top: 13px;
+        padding: 10px 12px;
+        border-left: 3px solid var(--blue);
+        background: var(--card-soft);
+      }
+
+      .event-kicker { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+      .event-text { margin-top: 3px; font-size: 14px; font-weight: 750; line-height: 1.5; }
+      .event-detail { margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+        gap: 22px;
+        margin-top: 16px;
+      }
+
+      .panel { padding: 12px 0 0; border-top: 1px solid var(--line); }
+      .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .panel-title { font-size: 12px; font-weight: 800; }
+      .panel-note { color: var(--muted); font-size: 10px; }
+
+      .graph-wrap {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card-soft);
+      }
+
+      .graph {
+        display: block;
+        width: 100%;
+        height: auto;
+        min-height: 250px;
+      }
+
+      .graph-line { stroke: light-dark(#9cacbf, #687890); stroke-width: 1.6; fill: none; }
+      .graph-line.left { stroke: var(--blue); }
+      .graph-line.right { stroke: var(--green); }
+      .graph-line.detached { stroke: var(--orange); stroke-dasharray: 5 4; }
+      .edge-label { fill: var(--muted); font-size: 8px; font-weight: 800; }
+      .node circle { stroke: var(--line); stroke-width: 1.6; fill: var(--card); transition: all .25s ease; }
+      .node text { fill: var(--ink); font-size: 13px; font-weight: 800; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+      .node.current circle { stroke: var(--blue); stroke-width: 3; fill: light-dark(#eaf1ff, #203253); }
+      .node.tail circle { stroke: var(--orange); stroke-width: 3; fill: light-dark(#fff2df, #46301b); }
+      .node.detached circle { stroke: var(--orange); stroke-dasharray: 4 3; fill: light-dark(#fff7ed, #34281d); }
+      .node.done circle { stroke: var(--green); fill: light-dark(#e9fbf3, #18362d); }
+      .node.current.tail circle { stroke: var(--red); fill: light-dark(#ffebed, #44262a); }
+
+      .legend { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 9px; color: var(--muted); font-size: 10px; }
+      .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+      .dot.tail { background: var(--orange); }
+      .dot.detached { border: 1px dashed var(--orange); background: transparent; }
+
+      .chain {
+        display: flex;
+        align-items: center;
+        min-height: 64px;
+        overflow-x: auto;
+        padding: 8px 9px;
+        border: 1px dashed var(--line);
+        border-radius: 7px;
+        background: transparent;
+      }
+
+      .chain-empty { color: var(--muted); font-size: 11px; }
+      .chain-node { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+      .chain-value { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid var(--green); border-radius: 7px; background: transparent; color: var(--green); font-size: 13px; font-weight: 750; }
+      .chain-arrow { color: var(--green); font-size: 16px; font-weight: 900; }
+
+      .vars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 10px; }
+      .var { min-width: 0; padding: 8px 0; border-bottom: 1px solid var(--line); }
+      .var-name { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+      .var-value { overflow: hidden; margin-top: 4px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+      .var-value.orange { color: var(--orange); }
+
+      .stack { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; margin-top: 10px; }
+      .stack-chip { padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 700; }
+      .stack-empty { color: var(--muted); font-size: 11px; }
+
+      .code-panel { margin-top: 16px; }
+      .code { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--card-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.72; }
+      .code-line { display: grid; grid-template-columns: 32px 1fr; min-height: 20px; padding-right: 10px; }
+      .code-line.active { background: light-dark(#eaf1ff, #203253); }
+      .line-no { padding-right: 8px; color: var(--muted); text-align: right; user-select: none; }
+      .code-line.active .line-no { color: var(--blue); font-weight: 800; }
+      .code-text { white-space: pre; }
+      .kw { color: light-dark(#9257b5, #db9bf1); }
+      .var-token { color: light-dark(#126d9c, #7fd8ff); }
+      .comment { color: var(--muted); }
+
+      .explain { margin-top: 16px; padding: 12px 0 0; border-top: 1px solid var(--line); }
+      .explain-title { margin: 0 0 8px; font-size: 12px; }
+      .explain-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+      .explain-item { padding: 8px 8px 8px 9px; border-left: 2px solid var(--line); border-radius: 0; background: transparent; }
+      .explain-item strong { display: block; color: var(--blue); font-size: 11px; }
+      .explain-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+      @media (max-width: 780px) {
+        body { padding: 10px; }
+        .grid { grid-template-columns: 1fr; }
+        .toolbar { flex-wrap: wrap; }
+        .progress { order: 5; flex-basis: 100%; }
+        .step-label { margin-left: auto; }
+        .explain-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="demo">
+      <section class="header">
+        <div class="eyebrow">LEETCODE 114 · POSTORDER REWIRE</div>
+        <h1>二叉树展开为链表：递归返回时如何“接起来”？</h1>
+        <p class="subtitle">点击“下一步”观察：先递归处理左右子树，回溯到当前节点后，再把左链搬到右边，最后把原右链接到左链尾部。</p>
+      </section>
+
+      <section class="toolbar" aria-label="动画控制">
+        <button id="prev" type="button">← 上一步</button>
+        <button id="next" class="primary" type="button">下一步 →</button>
+        <button id="play" type="button">▶ 自动播放</button>
+        <button id="reset" class="danger" type="button">↺ 重置</button>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+        <div id="stepLabel" class="step-label">1 / 1</div>
+      </section>
+
+      <section class="event" aria-live="polite">
+        <div class="event-kicker">CURRENT STEP</div>
+        <div>
+          <div id="eventText" class="event-text"></div>
+          <div id="eventDetail" class="event-detail"></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">当前指针关系</div>
+            <div class="panel-note">蓝色 = 当前 root · 橙色 = tail / oldRight</div>
+          </div>
+          <div class="graph-wrap">
+            <svg id="graph" class="graph" viewBox="0 0 540 285" role="img" aria-label="二叉树指针关系图"></svg>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><i class="dot"></i>当前递归节点</span>
+            <span class="legend-item"><i class="dot tail"></i>tail 或暂存的 oldRight</span>
+            <span class="legend-item"><i class="dot detached"></i>暂时脱离 root 的右子树</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">沿着 root.right 看到的链</div>
+            <div class="panel-note">最终结果：1 → 2 → 3 → 4 → 5 → 6</div>
+          </div>
+          <div id="chain" class="chain"></div>
+          <div class="vars">
+            <div class="var"><div class="var-name">root</div><div id="rootValue" class="var-value"></div></div>
+            <div class="var"><div class="var-name">tail</div><div id="tailValue" class="var-value"></div></div>
+            <div class="var"><div class="var-name">oldRight</div><div id="oldRightValue" class="var-value orange"></div></div>
+          </div>
+          <div class="panel-head" style="margin-top:16px;margin-bottom:0">
+            <div class="panel-title">递归调用栈</div>
+            <div class="panel-note">后进先返回</div>
+          </div>
+          <div id="stack" class="stack"></div>
+        </div>
+      </section>
+
+      <section class="panel code-panel">
+        <div class="panel-head">
+          <div class="panel-title">代码执行位置</div>
+          <div class="panel-note">高亮行就是当前步骤</div>
+        </div>
+        <div id="code" class="code"></div>
+      </section>
+
+      <section class="explain">
+        <h2 class="explain-title">把整个算法记成 5 个动作</h2>
+        <div class="explain-grid">
+          <div class="explain-item"><strong>1. 先左</strong><span>递归把左子树变成右链。</span></div>
+          <div class="explain-item"><strong>2. 再右</strong><span>递归把右子树也变成右链。</span></div>
+          <div class="explain-item"><strong>3. 暂存右</strong><span>覆盖 root.right 前保存 oldRight。</span></div>
+          <div class="explain-item"><strong>4. 左搬右</strong><span>root.right = root.left，root.left = null。</span></div>
+          <div class="explain-item"><strong>5. 尾接右</strong><span>找到左链尾部，再接回 oldRight。</span></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const original = {
+        1: { value: 1, left: 2, right: 5 },
+        2: { value: 2, left: 3, right: 4 },
+        3: { value: 3, left: null, right: null },
+        4: { value: 4, left: null, right: null },
+        5: { value: 5, left: null, right: 6 },
+        6: { value: 6, left: null, right: null },
+      };
+
+      const positions = {
+        1: [270, 35],
+        2: [145, 105],
+        5: [395, 105],
+        3: [80, 190],
+        4: [210, 190],
+        6: [395, 190],
+      };
+
+      const codeLines = [
+        '<span class="kw">public void</span> flatten(<span class="var-token">TreeNode root</span>) {',
+        '    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span>;',
+        '',
+        '    flatten(root.left);',
+        '    flatten(root.right);',
+        '',
+        '    TreeNode <span class="var-token">oldRight</span> = root.right;',
+        '    root.right = root.left;',
+        '    root.left = <span class="kw">null</span>;',
+        '',
+        '    TreeNode <span class="var-token">tail</span> = root;',
+        '    <span class="kw">while</span> (tail.right != <span class="kw">null</span>) {',
+        '        tail = tail.right;',
+        '    }',
+        '',
+        '    tail.right = oldRight;',
+        '}',
+      ];
+
+      const snapshots = [];
+      const nodes = structuredClone(original);
+
+      function cloneNodes() {
+        return structuredClone(nodes);
+      }
+
+      function value(id) {
+        return id == null ? '—' : String(nodes[id].value);
+      }
+
+      function record({ text, detail, line, current = null, tail = null, oldRight = null, stack = [] }) {
+        snapshots.push({
+          nodes: cloneNodes(),
+          text,
+          detail,
+          line,
+          current,
+          tail,
+          oldRight,
+          stack: [...stack],
+        });
+      }
+
+      function flatten(nodeId, stack) {
+        if (nodeId == null) {
+          record({
+            text: '遇到 null，当前递归直接返回',
+            detail: '这就是 if (root == null) return；不会产生新的链表节点。',
+            line: 2,
+            stack,
+          });
+          return;
+        }
+
+        stack.push(nodeId);
+        record({
+          text: `进入 flatten(${value(nodeId)})`,
+          detail: `当前 root = ${value(nodeId)}，先递归左子树，再递归右子树。`,
+          line: 1,
+          current: nodeId,
+          stack,
+        });
+
+        record({
+          text: `执行 flatten(${value(nodes[nodeId].left)})`,
+          detail: `还没有改指针，先把 root = ${value(nodeId)} 的左子树处理完。`,
+          line: 4,
+          current: nodeId,
+          stack,
+        });
+        flatten(nodes[nodeId].left, stack);
+
+        record({
+          text: `左子树完成，执行 flatten(${value(nodes[nodeId].right)})`,
+          detail: `现在回到 root = ${value(nodeId)}，开始处理右子树。`,
+          line: 5,
+          current: nodeId,
+          stack,
+        });
+        flatten(nodes[nodeId].right, stack);
+
+        const oldRight = nodes[nodeId].right;
+        record({
+          text: `oldRight = ${value(oldRight)}`,
+          detail: '马上要覆盖 root.right，所以必须先把原来的右子树保存下来。',
+          line: 7,
+          current: nodeId,
+          oldRight,
+          stack,
+        });
+
+        nodes[nodeId].right = nodes[nodeId].left;
+        record({
+          text: `root.right = root.left（${value(nodes[nodeId].right)}）`,
+          detail: `把已经整理好的左链搬到 root = ${value(nodeId)} 的右边。`,
+          line: 8,
+          current: nodeId,
+          oldRight,
+          stack,
+        });
+
+        nodes[nodeId].left = null;
+        record({
+          text: `root.left = null（断开左指针）`,
+          detail: '满足最终结构：每个节点的 left 都必须为空。',
+          line: 9,
+          current: nodeId,
+          oldRight,
+          stack,
+        });
+
+        let tail = nodeId;
+        record({
+          text: `tail = root = ${value(tail)}`,
+          detail: '从当前 root 出发，沿 right 找到刚搬过来的左链尾部。',
+          line: 11,
+          current: nodeId,
+          tail,
+          oldRight,
+          stack,
+        });
+
+        while (nodes[tail].right != null) {
+          tail = nodes[tail].right;
+          record({
+            text: `tail 向右移动到 ${value(tail)}`,
+            detail: 'while (tail.right != null) 继续寻找链尾。',
+            line: 13,
+            current: nodeId,
+            tail,
+            oldRight,
+            stack,
+          });
+        }
+
+        record({
+          text: `找到链尾 tail = ${value(tail)}`,
+          detail: 'tail.right 现在为空，可以安全接上暂存的 oldRight。',
+          line: 14,
+          current: nodeId,
+          tail,
+          oldRight,
+          stack,
+        });
+
+        nodes[tail].right = oldRight;
+        record({
+          text: `tail.right = oldRight（接回 ${value(oldRight)}）`,
+          detail: `root = ${value(nodeId)} 的这一轮整理完成，向上一层返回。`,
+          line: 16,
+          current: nodeId,
+          tail,
+          stack,
+        });
+
+        stack.pop();
+        record({
+          text: `flatten(${value(nodeId)}) 返回`,
+          detail: '当前子树已经是一条只沿 right 连接的链。',
+          line: 17,
+          current: stack.length ? stack[stack.length - 1] : null,
+          stack,
+        });
+      }
+
+      flatten(1, []);
+
+      let index = 0;
+      let timer = null;
+
+      function reachable(state) {
+        const seen = new Set();
+        function visit(id) {
+          if (id == null || seen.has(id)) return;
+          seen.add(id);
+          visit(state.nodes[id].left);
+          visit(state.nodes[id].right);
+        }
+        visit(1);
+        return seen;
+      }
+
+      function svgElement(name, attrs = {}) {
+        const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+        for (const [key, attrValue] of Object.entries(attrs)) element.setAttribute(key, attrValue);
+        return element;
+      }
+
+      function renderGraph(state) {
+        const svg = document.querySelector('#graph');
+        svg.replaceChildren();
+        const seen = reachable(state);
+
+        for (const id of Object.keys(state.nodes)) {
+          const node = state.nodes[id];
+          const [x, y] = positions[id];
+          for (const [side, target] of [['left', node.left], ['right', node.right]]) {
+            if (target == null) continue;
+            const [tx, ty] = positions[target];
+            const line = svgElement('line', { x1: x, y1: y + 21, x2: tx, y2: ty - 21, class: `graph-line ${side}` });
+            if (state.oldRight === Number(target) && !seen.has(Number(target))) line.classList.add('detached');
+            svg.append(line);
+            const label = svgElement('text', { x: (x + tx) / 2 + (side === 'left' ? -5 : 5), y: (y + ty) / 2, class: 'edge-label' });
+            label.textContent = side === 'left' ? 'L' : 'R';
+            svg.append(label);
+          }
+        }
+
+        for (const id of Object.keys(state.nodes)) {
+          const number = Number(id);
+          const [x, y] = positions[number];
+          const group = svgElement('g', { class: 'node' });
+          if (state.current === number) group.classList.add('current');
+          if (state.tail === number) group.classList.add('tail');
+          if (!seen.has(number)) group.classList.add('detached');
+          if (seen.has(number) && state.current !== number && state.stack.length === 0) group.classList.add('done');
+          group.append(svgElement('circle', { cx: x, cy: y, r: 21 }));
+          const text = svgElement('text', { x, y });
+          text.textContent = String(state.nodes[number].value);
+          group.append(text);
+          svg.append(group);
+        }
+      }
+
+      function renderChain(state) {
+        const chain = document.querySelector('#chain');
+        chain.replaceChildren();
+        const seen = new Set();
+        let current = 1;
+        let count = 0;
+        while (current != null && !seen.has(current) && count < 10) {
+          seen.add(current);
+          const item = document.createElement('div');
+          item.className = 'chain-node';
+          const valueNode = document.createElement('span');
+          valueNode.className = 'chain-value';
+          valueNode.textContent = state.nodes[current].value;
+          item.append(valueNode);
+          current = state.nodes[current].right;
+          if (current != null) {
+            const arrow = document.createElement('span');
+            arrow.className = 'chain-arrow';
+            arrow.textContent = '→';
+            item.append(arrow);
+          }
+          chain.append(item);
+          count += 1;
+        }
+        if (!chain.childElementCount) {
+          const empty = document.createElement('span');
+          empty.className = 'chain-empty';
+          empty.textContent = 'root.right 目前为空';
+          chain.append(empty);
+        }
+      }
+
+      function renderCode(line) {
+        const code = document.querySelector('#code');
+        code.replaceChildren();
+        codeLines.forEach((html, i) => {
+          const row = document.createElement('div');
+          row.className = `code-line${i + 1 === line ? ' active' : ''}`;
+          const number = document.createElement('span');
+          number.className = 'line-no';
+          number.textContent = i + 1;
+          const text = document.createElement('span');
+          text.className = 'code-text';
+          text.innerHTML = html || '&nbsp;';
+          row.append(number, text);
+          code.append(row);
+        });
+      }
+
+      function render() {
+        const state = snapshots[index];
+        renderGraph(state);
+        renderChain(state);
+        renderCode(state.line);
+        document.querySelector('#eventText').textContent = state.text;
+        document.querySelector('#eventDetail').textContent = state.detail;
+        document.querySelector('#rootValue').textContent = state.current == null ? '—' : value(state.current);
+        document.querySelector('#tailValue').textContent = state.tail == null ? '—' : value(state.tail);
+        document.querySelector('#oldRightValue').textContent = state.oldRight == null ? '—' : value(state.oldRight);
+
+        const stack = document.querySelector('#stack');
+        stack.replaceChildren();
+        if (state.stack.length === 0) {
+          const empty = document.createElement('span');
+          empty.className = 'stack-empty';
+          empty.textContent = '调用栈已清空，全部展开完成';
+          stack.append(empty);
+        } else {
+          state.stack.forEach((id) => {
+            const chip = document.createElement('span');
+            chip.className = 'stack-chip';
+            chip.textContent = `flatten(${value(id)})`;
+            stack.append(chip);
+          });
+        }
+
+        const total = snapshots.length - 1;
+        document.querySelector('#stepLabel').textContent = `${index + 1} / ${snapshots.length}`;
+        document.querySelector('#progressBar').style.width = `${total ? (index / total) * 100 : 100}%`;
+        document.querySelector('#prev').disabled = index === 0;
+        document.querySelector('#next').disabled = index === snapshots.length - 1;
+      }
+
+      function stop() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        document.querySelector('#play').textContent = '▶ 自动播放';
+      }
+
+      function next() {
+        if (index >= snapshots.length - 1) {
+          stop();
+          return;
+        }
+        index += 1;
+        render();
+      }
+
+      document.querySelector('#prev').addEventListener('click', () => { stop(); index -= 1; render(); });
+      document.querySelector('#next').addEventListener('click', next);
+      document.querySelector('#reset').addEventListener('click', () => { stop(); index = 0; render(); });
+      document.querySelector('#play').addEventListener('click', () => {
+        if (timer) {
+          stop();
+          return;
+        }
+        if (index >= snapshots.length - 1) index = 0;
+        document.querySelector('#play').textContent = 'Ⅱ 暂停';
+        timer = window.setInterval(() => {
+          if (index >= snapshots.length - 1) stop();
+          else next();
+        }, 1150);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.target.matches('button, input, textarea')) return;
+        if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); next(); }
+        if (event.key === 'ArrowLeft') { event.preventDefault(); stop(); index = Math.max(0, index - 1); render(); }
+      });
+
+      render();
+    </script>
+  </body>
+</html>

@@ -27,7 +27,9 @@ python3 "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" sk
 ## HTML Demo
 
 ~~~bash
-open apps/hot100-binary-tree-quiz/index.html
+python3 scripts/serve.py
 ~~~
 
-至少检查页面能打开、题目导航可用、文本框可输入、进度能保存，以及答案包按钮能复制结果。
+浏览器打开 [本地练习页](http://127.0.0.1:8765/apps/hot100-binary-tree-quiz/index.html)，检查页面能打开、题目导航可用、文本框可输入、进度能保存，以及答案包按钮能复制结果。
+
+Typora 动画的使用方式见 [使用指南](usage.md)。

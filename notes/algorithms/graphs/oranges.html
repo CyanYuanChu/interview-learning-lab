@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>994 腐烂的橘子</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ink: light-dark(#3f4248, #e7e9ed);
+      --muted: light-dark(#7a7f88, #aeb4bf);
+      --line: light-dark(#e5e7eb, #363b45);
+      --soft: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 5%));
+      --empty: light-dark(#f1f3f5, #2c323c);
+      --fresh: light-dark(#d8ead5, #35573e);
+      --rotten: light-dark(#f2c58b, #86521f);
+      --accent: light-dark(#55799f, #8fb4dd);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    }
+
+    html { background: transparent; }
+    body {
+      margin: 0;
+      padding: 8px 3px 18px;
+      color: var(--ink);
+      background: transparent;
+    }
+    main {
+      max-width: 820px;
+      margin: auto;
+      padding: 2px 0 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 21px; font-weight: 500; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    button {
+      min-width: 78px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink);
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); background: var(--soft); }
+    button.primary { border-color: var(--accent); color: var(--accent); }
+    button:focus-visible { outline: 3px solid #ffb000; outline-offset: 2px; }
+    .step { margin-left: auto; align-self: center; color: var(--muted); font-size: 12px; }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(54px, 78px));
+      justify-content: center;
+      gap: 7px;
+      margin: 17px auto 12px;
+    }
+    .cell {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 20px;
+      font-weight: 500;
+      transition: background-color 160ms ease, outline-color 160ms ease;
+    }
+    .cell.empty { background: var(--empty); color: var(--muted); }
+    .cell.fresh { background: var(--fresh); }
+    .cell.rotten { background: var(--rotten); }
+    .cell.changed { outline: 3px solid var(--accent); outline-offset: 1px; }
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .summary strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+    .queue {
+      margin: 12px auto 0;
+      max-width: 620px;
+      color: var(--muted);
+      font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-align: center;
+    }
+    .status {
+      min-height: 20px;
+      margin: 10px 0 0;
+      color: var(--ink);
+      font-size: 13px;
+      text-align: center;
+    }
+    .code {
+      margin: 12px auto 0;
+      max-width: 620px;
+      padding: 9px 12px;
+      border-left: 3px solid var(--accent);
+      background: var(--soft);
+      color: var(--muted);
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    @media (max-width: 520px) {
+      .step { width: 100%; margin-left: 0; }
+      .board { grid-template-columns: repeat(3, minmax(48px, 64px)); gap: 5px; }
+    }
+  </style>
+</head>
+<body>
+<main aria-labelledby="title">
+  <h2 id="title">994. 腐烂的橘子：多源 BFS</h2>
+  <p class="subtitle">所有初始腐烂橘子同时入队；队列的一层就是一分钟。</p>
+  <div class="controls" aria-label="动画控制">
+    <button id="prev" type="button">← 上一步</button>
+    <button id="play" class="primary" type="button">▶ 播放</button>
+    <button id="next" type="button">下一步 →</button>
+    <button id="reset" type="button">↺ 重置</button>
+    <span id="step" class="step" aria-live="polite"></span>
+  </div>
+  <div id="board" class="board" role="img" aria-label="橘子网格"></div>
+  <div class="summary">
+    <span>分钟：<strong id="minute">0</strong></span>
+    <span>剩余新鲜：<strong id="fresh">0</strong></span>
+  </div>
+  <div id="queue" class="queue"></div>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+  <div id="code" class="code"></div>
+</main>
+<script>
+  const initialGrid = [
+    [2, 1, 1],
+    [1, 1, 0],
+    [0, 1, 1]
+  ];
+  const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+  function cloneGrid(grid) {
+    return grid.map(function(row) { return row.slice(); });
+  }
+
+  function formatQueue(queue) {
+    if (queue.length === 0) {
+      return "当前队列：[]";
+    }
+    return "当前队列：" + queue.map(function(cell) {
+      return "(" + cell[0] + "," + cell[1] + ")";
+    }).join("  ");
+  }
+
+  function buildSteps() {
+    const grid = cloneGrid(initialGrid);
+    const queue = [];
+    let fresh = 0;
+    let minute = 0;
+    const steps = [];
+
+    for (let r = 0; r < grid.length; r++) {
+      for (let c = 0; c < grid[0].length; c++) {
+        if (grid[r][c] === 2) {
+          queue.push([r, c]);
+        } else if (grid[r][c] === 1) {
+          fresh++;
+        }
+      }
+    }
+
+    function save(message, changed) {
+      steps.push({
+        grid: cloneGrid(grid),
+        queue: queue.map(function(cell) { return cell.slice(); }),
+        fresh: fresh,
+        minute: minute,
+        changed: changed || [],
+        message: message
+      });
+    }
+
+    save("第 0 分钟：把所有初始腐烂橘子一起放入队列。", []);
+
+    while (queue.length > 0 && fresh > 0) {
+      const size = queue.length;
+      const changed = [];
+      minute++;
+
+      for (let i = 0; i < size; i++) {
+        const cell = queue.shift();
+
+        directions.forEach(function(dir) {
+          const nr = cell[0] + dir[0];
+          const nc = cell[1] + dir[1];
+
+          if (nr >= 0 && nr < grid.length
+              && nc >= 0 && nc < grid[0].length
+              && grid[nr][nc] === 1) {
+            grid[nr][nc] = 2;
+            fresh--;
+            queue.push([nr, nc]);
+            changed.push([nr, nc]);
+          }
+        });
+      }
+
+      save("第 " + minute + " 分钟：只处理上一层的 " + size + " 个橘子。", changed);
+    }
+
+    save(
+      fresh === 0
+        ? "所有新鲜橘子都已腐烂，答案是 " + minute + " 分钟。"
+        : "队列为空但仍有新鲜橘子，说明无法全部腐烂，答案是 -1。",
+      []
+    );
+    return steps;
+  }
+
+  const steps = buildSteps();
+  let index = 0;
+  let timer = null;
+  const board = document.querySelector("#board");
+  const stepText = document.querySelector("#step");
+  const minuteText = document.querySelector("#minute");
+  const freshText = document.querySelector("#fresh");
+  const queueText = document.querySelector("#queue");
+  const statusText = document.querySelector("#status");
+  const codeText = document.querySelector("#code");
+  const playButton = document.querySelector("#play");
+
+  function isChanged(changed, r, c) {
+    return changed.some(function(cell) {
+      return cell[0] === r && cell[1] === c;
+    });
+  }
+
+  function render() {
+    const state = steps[index];
+    board.innerHTML = "";
+
+    state.grid.forEach(function(row, r) {
+      row.forEach(function(value, c) {
+        const cell = document.createElement("div");
+        const name = value === 0 ? "empty" : value === 1 ? "fresh" : "rotten";
+        cell.className = "cell " + name;
+        if (isChanged(state.changed, r, c)) {
+          cell.classList.add("changed");
+        }
+        cell.textContent = value;
+        cell.setAttribute("aria-label", "第 " + r + " 行第 " + c + " 列：" + value);
+        board.appendChild(cell);
+      });
+    });
+
+    stepText.textContent = "步骤 " + (index + 1) + " / " + steps.length;
+    minuteText.textContent = state.minute;
+    freshText.textContent = state.fresh;
+    queueText.textContent = formatQueue(state.queue);
+    statusText.textContent = state.message;
+    codeText.textContent = state.changed.length > 0
+      ? "本层动作：grid[nr][nc] = 2；fresh--；queue.offer([nr, nc])。"
+      : "关键动作：int size = queue.size(); 固定当前层大小。";
+    document.querySelector("#prev").disabled = index === 0;
+    document.querySelector("#next").disabled = index === steps.length - 1;
+  }
+
+  function stop() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+    playButton.textContent = "▶ 播放";
+  }
+
+  function next() {
+    if (index < steps.length - 1) {
+      index++;
+      render();
+    } else {
+      stop();
+    }
+  }
+
+  document.querySelector("#prev").addEventListener("click", function() {
+    stop();
+    if (index > 0) {
+      index--;
+      render();
+    }
+  });
+  document.querySelector("#next").addEventListener("click", next);
+  document.querySelector("#reset").addEventListener("click", function() {
+    stop();
+    index = 0;
+    render();
+  });
+  playButton.addEventListener("click", function() {
+    if (timer !== null) {
+      stop();
+      return;
+    }
+    if (index === steps.length - 1) {
+      index = 0;
+      render();
+    }
+    playButton.textContent = "Ⅱ 暂停";
+    timer = setInterval(next, 1000);
+  });
+
+  render();
+</script>
+</body>
+</html>

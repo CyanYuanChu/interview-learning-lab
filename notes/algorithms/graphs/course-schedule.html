@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>207 课程表</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ink: light-dark(#3f4248, #e7e9ed);
+      --muted: light-dark(#7a7f88, #aeb4bf);
+      --line: light-dark(#e5e7eb, #363b45);
+      --soft: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 5%));
+      --accent: light-dark(#55799f, #8fb4dd);
+      --ready: light-dark(#dbe9f5, #30475d);
+      --done: light-dark(#d8eadb, #315541);
+      --current: light-dark(#f4d6a6, #765329);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    }
+
+    html { background: transparent; }
+    body {
+      margin: 0;
+      padding: 8px 3px 18px;
+      color: var(--ink);
+      background: transparent;
+    }
+    main {
+      max-width: 820px;
+      margin: auto;
+      padding: 2px 0 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 21px; font-weight: 500; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    button {
+      min-width: 78px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink);
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); background: var(--soft); }
+    button.primary { border-color: var(--accent); color: var(--accent); }
+    button:focus-visible { outline: 3px solid #ffb000; outline-offset: 2px; }
+    .step { margin-left: auto; align-self: center; color: var(--muted); font-size: 12px; }
+    .graph {
+      margin: 16px auto 8px;
+      padding: 5px 0;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+    }
+    svg { display: block; width: 100%; height: auto; }
+    .edge { stroke: var(--line); stroke-width: 2; }
+    .node circle { fill: transparent; stroke: var(--line); stroke-width: 2; }
+    .node text { fill: var(--ink); font-family: inherit; text-anchor: middle; }
+    .node .number { font-size: 18px; font-weight: 500; }
+    .node .label { fill: var(--muted); font-size: 11px; }
+    .node.ready circle { fill: var(--ready); stroke: var(--accent); }
+    .node.done circle { fill: var(--done); stroke: var(--done); }
+    .node.current circle { fill: var(--current); stroke: var(--accent); stroke-width: 3; }
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .summary strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+    .status {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: var(--ink);
+      font-size: 13px;
+      text-align: center;
+    }
+    .code {
+      margin: 12px auto 0;
+      max-width: 620px;
+      padding: 9px 12px;
+      border-left: 3px solid var(--accent);
+      background: var(--soft);
+      color: var(--muted);
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .legend { margin-top: 10px; color: var(--muted); font-size: 12px; text-align: center; }
+    @media (max-width: 520px) {
+      .step { width: 100%; margin-left: 0; }
+      .node .label { font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+<main aria-labelledby="title">
+  <h2 id="title">207. 课程表：Kahn 拓扑排序</h2>
+  <p class="subtitle">prerequisites 中的 [a, b] 表示 b → a；入度为 0 的课程可以先学。</p>
+  <div class="controls" aria-label="动画控制">
+    <button id="prev" type="button">← 上一步</button>
+    <button id="play" class="primary" type="button">▶ 播放</button>
+    <button id="next" type="button">下一步 →</button>
+    <button id="reset" type="button">↺ 重置</button>
+    <span id="step" class="step" aria-live="polite"></span>
+  </div>
+  <div class="graph">
+    <svg viewBox="0 0 700 220" role="img" aria-label="课程依赖有向图">
+      <line class="edge" x1="350" y1="55" x2="185" y2="145"></line>
+      <line class="edge" x1="350" y1="55" x2="515" y2="145"></line>
+      <line class="edge" x1="185" y1="145" x2="350" y2="190"></line>
+      <line class="edge" x1="515" y1="145" x2="350" y2="190"></line>
+
+      <g id="node-0" class="node" transform="translate(350 45)">
+        <circle r="27"></circle><text class="number" y="6">0</text><text class="label" y="47">课程 0</text>
+      </g>
+      <g id="node-1" class="node" transform="translate(185 135)">
+        <circle r="27"></circle><text class="number" y="6">1</text><text class="label" y="47">课程 1</text>
+      </g>
+      <g id="node-2" class="node" transform="translate(515 135)">
+        <circle r="27"></circle><text class="number" y="6">2</text><text class="label" y="47">课程 2</text>
+      </g>
+      <g id="node-3" class="node" transform="translate(350 190)">
+        <circle r="27"></circle><text class="number" y="6">3</text><text class="label" y="47">课程 3</text>
+      </g>
+    </svg>
+  </div>
+  <div class="summary">
+    <span>队列：<strong id="queue">[0]</strong></span>
+    <span>入度：<strong id="indegree">[0, 1, 1, 2]</strong></span>
+    <span>已完成：<strong id="finished">0 / 4</strong></span>
+  </div>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+  <div id="code" class="code"></div>
+  <div class="legend">蓝色：当前可学　绿色：已经完成　橙色：正在处理</div>
+</main>
+<script>
+  const steps = [
+    {
+      queue: [0],
+      indegree: [0, 1, 1, 2],
+      current: null,
+      completed: [],
+      message: "初始化：只有课程 0 的入度是 0，可以先学习。",
+      code: "indegree[course]++；把所有 indegree == 0 的课程加入 queue。"
+    },
+    {
+      queue: [1, 2],
+      indegree: [0, 0, 0, 2],
+      current: 0,
+      completed: [0],
+      message: "出队课程 0，释放它指向的课程 1 和课程 2。",
+      code: "int pre = queue.poll(); finished++; 后继课程入度减一。"
+    },
+    {
+      queue: [2],
+      indegree: [0, 0, 1, 1],
+      current: 1,
+      completed: [0, 1],
+      message: "出队课程 1，课程 3 的入度从 2 减为 1。",
+      code: "indegree[3]--；仍然大于 0，所以暂时不能入队。"
+    },
+    {
+      queue: [3],
+      indegree: [0, 0, 0, 1],
+      current: 2,
+      completed: [0, 1, 2],
+      message: "出队课程 2，课程 3 的入度减为 0，加入队列。",
+      code: "if (--indegree[course] == 0) queue.offer(course);"
+    },
+    {
+      queue: [],
+      indegree: [0, 0, 0, 0],
+      current: 3,
+      completed: [0, 1, 2, 3],
+      message: "课程 3 出队，4 门课程全部完成，因此没有环。",
+      code: "finished == numCourses，返回 true。"
+    }
+  ];
+
+  let index = 0;
+  let timer = null;
+  const stepText = document.querySelector("#step");
+  const queueText = document.querySelector("#queue");
+  const indegreeText = document.querySelector("#indegree");
+  const finishedText = document.querySelector("#finished");
+  const statusText = document.querySelector("#status");
+  const codeText = document.querySelector("#code");
+  const playButton = document.querySelector("#play");
+
+  function render() {
+    const state = steps[index];
+    for (let node = 0; node < 4; node++) {
+      const element = document.querySelector("#node-" + node);
+      element.classList.remove("ready", "done", "current");
+      if (state.queue.indexOf(node) !== -1) {
+        element.classList.add("ready");
+      }
+      if (state.completed.indexOf(node) !== -1) {
+        element.classList.add("done");
+      }
+      if (state.current === node) {
+        element.classList.add("current");
+      }
+    }
+
+    stepText.textContent = "步骤 " + (index + 1) + " / " + steps.length;
+    queueText.textContent = "[" + state.queue.join(", ") + "]";
+    indegreeText.textContent = "[" + state.indegree.join(", ") + "]";
+    finishedText.textContent = state.completed.length + " / 4";
+    statusText.textContent = state.message;
+    codeText.textContent = state.code;
+    document.querySelector("#prev").disabled = index === 0;
+    document.querySelector("#next").disabled = index === steps.length - 1;
+  }
+
+  function stop() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+    playButton.textContent = "▶ 播放";
+  }
+
+  function next() {
+    if (index < steps.length - 1) {
+      index++;
+      render();
+    } else {
+      stop();
+    }
+  }
+
+  document.querySelector("#prev").addEventListener("click", function() {
+    stop();
+    if (index > 0) {
+      index--;
+      render();
+    }
+  });
+  document.querySelector("#next").addEventListener("click", next);
+  document.querySelector("#reset").addEventListener("click", function() {
+    stop();
+    index = 0;
+    render();
+  });
+  playButton.addEventListener("click", function() {
+    if (timer !== null) {
+      stop();
+      return;
+    }
+    if (index === steps.length - 1) {
+      index = 0;
+      render();
+    }
+    playButton.textContent = "Ⅱ 暂停";
+    timer = setInterval(next, 1100);
+  });
+
+  render();
+</script>
+</body>
+</html>

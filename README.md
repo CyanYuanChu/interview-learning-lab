@@ -41,10 +41,12 @@
 ## 本地运行
 
 ~~~bash
-open apps/hot100-binary-tree-quiz/index.html
+python3 scripts/serve.py
 ~~~
 
-测验是离线 HTML 页面，答题进度保存在浏览器本地存储中。
+启动后在浏览器打开 `http://127.0.0.1:8765/apps/hot100-binary-tree-quiz/index.html`。在 Typora 中打开专题笔记时，也需要保持这个本地服务运行，以加载内嵌动画。
+
+完整步骤见 [使用指南](docs/usage.md)。
 
 ## 维护入口
 

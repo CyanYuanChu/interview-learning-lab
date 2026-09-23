@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>105 从前序与中序构造二叉树：分治图解</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --ink: light-dark(#3f4248, #e7e9ed);
+        --muted: light-dark(#7a7f88, #aeb4bf);
+        --line: light-dark(#e5e7eb, #363b45);
+        --soft: light-dark(rgb(0 0 0 / 2.5%), rgb(255 255 255 / 4%));
+        --blue: light-dark(#55799f, #8fb4dd);
+        --green: light-dark(#4f8a70, #8bc5a7);
+        --orange: light-dark(#b27c3d, #ddb27a);
+        --red: light-dark(#b35d65, #e49aa0);
+        --blue-soft: light-dark(#eaf1ff, #203253);
+        --green-soft: light-dark(#e9fbf3, #18362d);
+        --orange-soft: light-dark(#fff2df, #46301b);
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      }
+
+      * { box-sizing: border-box; }
+      html { background: transparent; }
+
+      body {
+        margin: 0;
+        padding: 8px 3px 18px;
+        color: var(--ink);
+        background: transparent;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: transparent;
+        color: var(--ink);
+        padding: 7px 10px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) { border-color: var(--blue); background: var(--soft); }
+      button:disabled { cursor: not-allowed; opacity: .42; }
+      button:focus-visible { outline: 3px solid #ffc14d; outline-offset: 2px; }
+
+      .demo { width: min(980px, 100%); margin: 0 auto; }
+      .header { padding: 2px 0 12px; border-bottom: 1px solid var(--line); }
+      .eyebrow {
+        color: var(--blue);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .08em;
+      }
+      h1 { margin: 7px 0 6px; font-size: clamp(20px, 3vw, 27px); font-weight: 700; letter-spacing: -.035em; }
+      .subtitle { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 0;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .toolbar .primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+      .toolbar .danger { border-color: #f1b8bd; color: var(--red); }
+      .progress { flex: 1; min-width: 100px; height: 5px; overflow: hidden; border-radius: 99px; background: var(--soft); }
+      .progress > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .28s ease; }
+      .step-label { min-width: 76px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; text-align: right; }
+
+      .event {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 11px;
+        align-items: center;
+        margin-top: 13px;
+        padding: 10px 12px;
+        border-left: 3px solid var(--blue);
+        background: var(--soft);
+      }
+      .event-kicker { color: var(--blue); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+      .event-text { margin-top: 3px; font-size: 14px; font-weight: 750; line-height: 1.5; }
+      .event-detail { margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+      .grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(300px, .88fr); gap: 22px; margin-top: 16px; }
+      .panel { padding: 12px 0 0; border-top: 1px solid var(--line); }
+      .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+      .panel-title { font-size: 12px; font-weight: 800; }
+      .panel-note { color: var(--muted); font-size: 10px; }
+
+      .sequence { display: grid; gap: 9px; }
+      .sequence-row { display: grid; grid-template-columns: 76px 1fr; gap: 8px; align-items: center; }
+      .sequence-name { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+      .tokens { display: flex; flex-wrap: wrap; gap: 6px; }
+      .token-wrap { display: grid; justify-items: center; gap: 3px; min-width: 38px; }
+      .token {
+        display: grid;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: transparent;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        font-weight: 800;
+        transition: all .22s ease;
+      }
+      .token-index { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; }
+      .token.used { opacity: .36; }
+      .token.current { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); box-shadow: 0 0 0 2px light-dark(rgb(85 121 159 / 13%), rgb(143 180 221 / 16%)); }
+      .token.range { border-color: var(--green); background: var(--green-soft); }
+      .token.mid { border-color: var(--orange); background: var(--orange-soft); color: var(--orange); }
+      .token.range.mid { border-color: var(--orange); background: var(--orange-soft); }
+
+      .array-hint { margin: 12px 0 0; padding: 8px 10px; border-left: 2px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.55; }
+      .array-hint strong { color: var(--blue); }
+
+      .tree-wrap { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--soft); }
+      .tree { display: block; width: 100%; height: auto; min-height: 285px; }
+      .edge { stroke: light-dark(#9cacbf, #687890); stroke-width: 1.8; fill: none; transition: all .24s ease; }
+      .edge.left { stroke: var(--blue); }
+      .edge.right { stroke: var(--green); }
+      .edge.active { stroke-width: 3; }
+      .node circle { stroke: var(--line); stroke-width: 1.7; fill: light-dark(transparent, #1b1e24); transition: all .24s ease; }
+      .node text { fill: var(--ink); font-size: 14px; font-weight: 800; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+      .node.current circle { stroke: var(--blue); stroke-width: 3; fill: var(--blue-soft); }
+      .node.done circle { stroke: var(--green); fill: var(--green-soft); }
+      .node.new circle { stroke: var(--orange); stroke-width: 2.4; fill: var(--orange-soft); }
+      .tree-label { fill: var(--muted); font-size: 9px; font-weight: 700; }
+
+      .legend { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 9px; color: var(--muted); font-size: 10px; }
+      .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+      .dot.done { background: var(--green); }
+      .dot.mid { background: var(--orange); }
+
+      .vars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 12px; }
+      .var { min-width: 0; padding: 8px 0; border-bottom: 1px solid var(--line); }
+      .var-name { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+      .var-value { overflow: hidden; margin-top: 4px; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+      .var-value.orange { color: var(--orange); }
+
+      .stack { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; margin-top: 10px; }
+      .stack-chip { padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 700; }
+      .stack-chip.top { border-color: var(--blue); background: var(--blue-soft); }
+      .stack-empty { color: var(--muted); font-size: 11px; }
+
+      .code-panel { margin-top: 16px; }
+      .code { overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: var(--soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.72; }
+      .code-line { display: grid; grid-template-columns: 32px 1fr; min-height: 20px; padding-right: 10px; }
+      .code-line.active { background: var(--blue-soft); }
+      .line-no { padding-right: 8px; color: var(--muted); text-align: right; user-select: none; }
+      .code-line.active .line-no { color: var(--blue); font-weight: 800; }
+      .code-text { white-space: pre; }
+      .kw { color: light-dark(#9257b5, #db9bf1); }
+      .var-token { color: light-dark(#126d9c, #7fd8ff); }
+      .comment { color: var(--muted); }
+
+      .explain { margin-top: 16px; padding: 12px 0 0; border-top: 1px solid var(--line); }
+      .explain-title { margin: 0 0 8px; font-size: 12px; }
+      .explain-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+      .explain-item { padding: 8px 8px 8px 9px; border-left: 2px solid var(--line); background: transparent; }
+      .explain-item strong { display: block; color: var(--blue); font-size: 11px; }
+      .explain-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+      @media (max-width: 780px) {
+        body { padding: 10px; }
+        .grid { grid-template-columns: 1fr; }
+        .toolbar { flex-wrap: wrap; }
+        .progress { order: 5; flex-basis: 100%; }
+        .step-label { margin-left: auto; }
+        .explain-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="demo">
+      <section class="header">
+        <div class="eyebrow">LEETCODE 105 · DIVIDE &amp; CONQUER</div>
+        <h1>从前序与中序“拼”出二叉树</h1>
+        <p class="subtitle">前序的第一个未使用元素负责找根；在中序中定位它，再把区间切成左子树和右子树，递归完成构造。</p>
+      </section>
+
+      <section class="toolbar" aria-label="动画控制">
+        <button id="prev" type="button">← 上一步</button>
+        <button id="next" class="primary" type="button">下一步 →</button>
+        <button id="play" type="button">▶ 自动播放</button>
+        <button id="reset" class="danger" type="button">↺ 重置</button>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+        <div id="stepLabel" class="step-label">1 / 1</div>
+      </section>
+
+      <section class="event" aria-live="polite">
+        <div class="event-kicker">CURRENT STEP</div>
+        <div>
+          <div id="eventText" class="event-text"></div>
+          <div id="eventDetail" class="event-detail"></div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">两个遍历序列</div>
+            <div class="panel-note">橙色 = 当前根 · 绿色 = 当前中序区间</div>
+          </div>
+          <div class="sequence">
+            <div class="sequence-row">
+              <div class="sequence-name">preorder</div>
+              <div id="preorder" class="tokens" aria-label="前序遍历"></div>
+            </div>
+            <div class="sequence-row">
+              <div class="sequence-name">inorder</div>
+              <div id="inorder" class="tokens" aria-label="中序遍历"></div>
+            </div>
+          </div>
+          <div class="array-hint"><strong>记忆：</strong>前序负责“按顺序取根”，中序负责“告诉你左右子树分别是谁”。</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">正在生成的树</div>
+            <div class="panel-note">边的颜色：蓝左 / 绿右</div>
+          </div>
+          <div class="tree-wrap">
+            <svg id="tree" class="tree" viewBox="0 0 520 290" role="img" aria-label="逐步构造二叉树"></svg>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><i class="dot"></i>当前递归节点</span>
+            <span class="legend-item"><i class="dot done"></i>已经连接</span>
+            <span class="legend-item"><i class="dot mid"></i>刚取出的根</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">当前递归状态</div>
+            <div class="panel-note">每一层只负责自己的中序区间</div>
+          </div>
+          <div class="vars">
+            <div class="var"><div class="var-name">preorderIndex</div><div id="preIndex" class="var-value"></div></div>
+            <div class="var"><div class="var-name">inorder 区间</div><div id="rangeValue" class="var-value"></div></div>
+            <div class="var"><div class="var-name">mid</div><div id="midValue" class="var-value orange"></div></div>
+          </div>
+          <div class="panel-head" style="margin-top:16px;margin-bottom:0">
+            <div class="panel-title">递归调用栈</div>
+            <div class="panel-note">最后一个是当前函数</div>
+          </div>
+          <div id="stack" class="stack"></div>
+        </div>
+      </section>
+
+      <section class="panel code-panel">
+        <div class="panel-head">
+          <div class="panel-title">代码执行位置</div>
+          <div class="panel-note">高亮行就是当前步骤</div>
+        </div>
+        <div id="code" class="code"></div>
+      </section>
+
+      <section class="explain">
+        <h2 class="explain-title">把整个算法记成 5 个动作</h2>
+        <div class="explain-grid">
+          <div class="explain-item"><strong>1. 前序取根</strong><span>当前递归区间的根，就是 preorder 的下一个元素。</span></div>
+          <div class="explain-item"><strong>2. 中序定位</strong><span>在 inorder 中找到根的位置 mid。</span></div>
+          <div class="explain-item"><strong>3. 切左区间</strong><span>[left, mid - 1] 递归构造左子树。</span></div>
+          <div class="explain-item"><strong>4. 切右区间</strong><span>[mid + 1, right] 递归构造右子树。</span></div>
+          <div class="explain-item"><strong>5. 返回挂接</strong><span>递归返回的节点接到父节点的 left 或 right。</span></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const preorder = [3, 9, 20, 15, 7];
+      const inorder = [9, 3, 15, 20, 7];
+      const inorderIndex = { 3: 1, 9: 0, 20: 3, 15: 2, 7: 4 };
+      const positions = {
+        3: [260, 42],
+        9: [135, 132],
+        20: [385, 132],
+        15: [315, 225],
+        7: [455, 225],
+      };
+
+      const codeLines = [
+        '<span class="kw">private</span> <span class="kw">TreeNode</span> build(preorder, left, right) {',
+        '    <span class="kw">if</span> (left &gt; right) <span class="kw">return</span> <span class="kw">null</span>;',
+        '',
+        '    <span class="kw">int</span> rootValue = preorder[preorderIndex++];',
+        '    <span class="kw">TreeNode</span> root = <span class="kw">new</span> <span class="kw">TreeNode</span>(rootValue);',
+        '',
+        '    <span class="kw">int</span> mid = inorderIndex.get(rootValue);',
+        '    root.left = build(preorder, left, mid - 1);',
+        '    root.right = build(preorder, mid + 1, right);',
+        '',
+        '    <span class="kw">return</span> root;',
+        '}',
+      ];
+
+      const snapshots = [];
+      const tree = {};
+      const callStack = [];
+      let preorderIndexValue = 0;
+
+      function cloneTree() {
+        return Object.fromEntries(Object.entries(tree).map(([id, node]) => [id, { ...node }]));
+      }
+
+      function cloneStack() {
+        return callStack.map((frame) => ({ ...frame }));
+      }
+
+      function currentFrame() {
+        return callStack.length ? callStack[callStack.length - 1] : null;
+      }
+
+      function record({ text, detail, line, current = currentFrame()?.node ?? null, selectedPre = null, range = currentFrame() ? [currentFrame().left, currentFrame().right] : null, mid = currentFrame()?.mid ?? null }) {
+        snapshots.push({
+          tree: cloneTree(),
+          stack: cloneStack(),
+          preIndex: preorderIndexValue,
+          text,
+          detail,
+          line,
+          current,
+          selectedPre,
+          range: range ? [...range] : null,
+          mid,
+        });
+      }
+
+      function value(id) {
+        return id == null ? '—' : String(id);
+      }
+
+      record({
+        text: '准备开始构造',
+        detail: '初始调用 build(preorder, 0, 4)，整个 inorder 区间都属于根节点。',
+        line: 1,
+        current: null,
+        selectedPre: null,
+        range: [0, 4],
+        mid: null,
+      });
+
+      function build(left, right, parent = null, side = null) {
+        if (left > right) {
+          const parentFrame = currentFrame();
+          record({
+            text: '区间为空，返回 null',
+            detail: `当前区间 [${left}, ${right}] 没有节点，所以对应的子树为空。`,
+            line: 2,
+            current: parentFrame?.node ?? null,
+            selectedPre: null,
+            range: parentFrame ? [parentFrame.left, parentFrame.right] : null,
+            mid: parentFrame?.mid ?? null,
+          });
+          return null;
+        }
+
+        const preorderPosition = preorderIndexValue;
+        const nodeValue = preorder[preorderIndexValue++];
+        tree[nodeValue] = { left: null, right: null };
+        if (parent != null) tree[parent][side] = nodeValue;
+
+        const frame = { node: nodeValue, left, right, mid: null };
+        callStack.push(frame);
+        record({
+          text: `取 preorder[${preorderPosition}] = ${nodeValue}，创建根节点`,
+          detail: `当前递归只处理 inorder[${left}..${right}]，所以 ${nodeValue} 是这个区间的根。`,
+          line: 4,
+          current: nodeValue,
+          selectedPre: preorderPosition,
+          range: [left, right],
+          mid: null,
+        });
+
+        const mid = inorderIndex[nodeValue];
+        frame.mid = mid;
+        record({
+          text: `在 inorder 中定位 ${nodeValue}：下标 ${mid}`,
+          detail: `根左边的 [${left}, ${mid - 1}] 属于左子树，根右边的 [${mid + 1}, ${right}] 属于右子树。`,
+          line: 7,
+          current: nodeValue,
+          selectedPre: preorderPosition,
+          range: [left, right],
+          mid,
+        });
+
+        record({
+          text: `递归构造 ${nodeValue} 的左子树`,
+          detail: `调用 build(preorder, ${left}, ${mid - 1})，把中序根左侧切出来。`,
+          line: 8,
+          current: nodeValue,
+          selectedPre: null,
+          range: [left, right],
+          mid,
+        });
+        build(left, mid - 1, nodeValue, 'left');
+
+        record({
+          text: `左子树完成，递归构造 ${nodeValue} 的右子树`,
+          detail: `调用 build(preorder, ${mid + 1}, ${right})，把中序根右侧切出来。`,
+          line: 9,
+          current: nodeValue,
+          selectedPre: null,
+          range: [left, right],
+          mid,
+        });
+        build(mid + 1, right, nodeValue, 'right');
+
+        record({
+          text: `build(${left}, ${right}) 返回 ${nodeValue}`,
+          detail: `节点 ${nodeValue} 的左右子树都已构造完成，返回给上一层。`,
+          line: 11,
+          current: nodeValue,
+          selectedPre: null,
+          range: [left, right],
+          mid,
+        });
+
+        callStack.pop();
+        const parentFrame = currentFrame();
+        record({
+          text: parentFrame ? `回到节点 ${parentFrame.node}` : '整棵树构造完成',
+          detail: parentFrame
+            ? `返回值 ${nodeValue} 已挂到节点 ${parentFrame.node} 的 ${side === 'left' ? 'left' : 'right'}。`
+            : '前序负责找根，中序负责分区，最终得到完整二叉树。',
+          line: parentFrame ? (side === 'left' ? 8 : 9) : 11,
+          current: parentFrame?.node ?? null,
+          selectedPre: null,
+          range: parentFrame ? [parentFrame.left, parentFrame.right] : null,
+          mid: parentFrame?.mid ?? null,
+        });
+        return nodeValue;
+      }
+
+      build(0, inorder.length - 1);
+
+      let index = 0;
+      let timer = null;
+
+      function svgElement(name, attrs = {}) {
+        const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+        for (const [key, attrValue] of Object.entries(attrs)) element.setAttribute(key, attrValue);
+        return element;
+      }
+
+      function renderSequence(containerId, values, type, state) {
+        const container = document.querySelector(`#${containerId}`);
+        container.replaceChildren();
+        values.forEach((item, i) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'token-wrap';
+          const token = document.createElement('div');
+          token.className = 'token';
+          token.textContent = item;
+          if (type === 'preorder') {
+            if (i < state.preIndex) token.classList.add('used');
+            if (i === state.selectedPre) {
+              token.classList.remove('used');
+              token.classList.add('current');
+            }
+          } else if (state.range && i >= state.range[0] && i <= state.range[1]) {
+            token.classList.add('range');
+            if (i === state.mid) token.classList.add('mid');
+          }
+          const idx = document.createElement('span');
+          idx.className = 'token-index';
+          idx.textContent = `[${i}]`;
+          wrap.append(token, idx);
+          container.append(wrap);
+        });
+      }
+
+      function renderTree(state) {
+        const svg = document.querySelector('#tree');
+        svg.replaceChildren();
+        const ids = Object.keys(state.tree).map(Number);
+
+        ids.forEach((id) => {
+          const node = state.tree[id];
+          for (const [side, target] of [['left', node.left], ['right', node.right]]) {
+            if (target == null) continue;
+            const [x, y] = positions[id];
+            const [tx, ty] = positions[target];
+            const line = svgElement('line', {
+              x1: x, y1: y + 22, x2: tx, y2: ty - 22,
+              class: `edge ${side}${state.current === id || state.current === target ? ' active' : ''}`,
+            });
+            svg.append(line);
+            const label = svgElement('text', {
+              x: (x + tx) / 2 + (side === 'left' ? -6 : 6),
+              y: (y + ty) / 2,
+              class: 'tree-label',
+            });
+            label.textContent = side === 'left' ? 'L' : 'R';
+            svg.append(label);
+          }
+        });
+
+        ids.forEach((id) => {
+          const [x, y] = positions[id];
+          const group = svgElement('g', { class: 'node' });
+          if (state.current === id) group.classList.add('current');
+          else if (state.selectedPre != null && preorder[state.selectedPre] === id) group.classList.add('new');
+          else group.classList.add('done');
+          group.append(svgElement('circle', { cx: x, cy: y, r: 22 }));
+          const text = svgElement('text', { x, y });
+          text.textContent = String(id);
+          group.append(text);
+          svg.append(group);
+        });
+
+        if (!ids.length) {
+          const empty = svgElement('text', { x: 260, y: 145, class: 'tree-label', 'text-anchor': 'middle' });
+          empty.textContent = '还没有创建节点';
+          svg.append(empty);
+        }
+      }
+
+      function renderCode(line) {
+        const code = document.querySelector('#code');
+        code.replaceChildren();
+        codeLines.forEach((html, i) => {
+          const row = document.createElement('div');
+          row.className = `code-line${i + 1 === line ? ' active' : ''}`;
+          const number = document.createElement('span');
+          number.className = 'line-no';
+          number.textContent = i + 1;
+          const text = document.createElement('span');
+          text.className = 'code-text';
+          text.innerHTML = html || '&nbsp;';
+          row.append(number, text);
+          code.append(row);
+        });
+      }
+
+      function renderStack(state) {
+        const stack = document.querySelector('#stack');
+        stack.replaceChildren();
+        if (!state.stack.length) {
+          const empty = document.createElement('span');
+          empty.className = 'stack-empty';
+          empty.textContent = '调用栈已清空，全部构造完成';
+          stack.append(empty);
+          return;
+        }
+        state.stack.forEach((frame, i) => {
+          const chip = document.createElement('span');
+          chip.className = `stack-chip${i === state.stack.length - 1 ? ' top' : ''}`;
+          chip.textContent = `build([${frame.left},${frame.right}]) → ${frame.node}`;
+          stack.append(chip);
+        });
+      }
+
+      function render() {
+        const state = snapshots[index];
+        renderSequence('preorder', preorder, 'preorder', state);
+        renderSequence('inorder', inorder, 'inorder', state);
+        renderTree(state);
+        renderCode(state.line);
+        renderStack(state);
+
+        document.querySelector('#eventText').textContent = state.text;
+        document.querySelector('#eventDetail').textContent = state.detail;
+        document.querySelector('#preIndex').textContent = state.preIndex < preorder.length
+          ? `${state.preIndex}（待取 ${preorder[state.preIndex]}）`
+          : `${state.preIndex}（完成）`;
+        document.querySelector('#rangeValue').textContent = state.range ? `[${state.range[0]}, ${state.range[1]}]` : '—';
+        document.querySelector('#midValue').textContent = state.mid == null ? '—' : `${state.mid}（${inorder[state.mid]}）`;
+
+        const total = snapshots.length - 1;
+        document.querySelector('#stepLabel').textContent = `${index + 1} / ${snapshots.length}`;
+        document.querySelector('#progressBar').style.width = `${total ? (index / total) * 100 : 100}%`;
+        document.querySelector('#prev').disabled = index === 0;
+        document.querySelector('#next').disabled = index === snapshots.length - 1;
+      }
+
+      function stop() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        document.querySelector('#play').textContent = '▶ 自动播放';
+      }
+
+      function next() {
+        if (index >= snapshots.length - 1) {
+          stop();
+          return;
+        }
+        index += 1;
+        render();
+      }
+
+      document.querySelector('#prev').addEventListener('click', () => {
+        stop();
+        index = Math.max(0, index - 1);
+        render();
+      });
+      document.querySelector('#next').addEventListener('click', next);
+      document.querySelector('#reset').addEventListener('click', () => {
+        stop();
+        index = 0;
+        render();
+      });
+      document.querySelector('#play').addEventListener('click', () => {
+        if (timer) {
+          stop();
+          return;
+        }
+        if (index >= snapshots.length - 1) index = 0;
+        document.querySelector('#play').textContent = 'Ⅱ 暂停';
+        timer = window.setInterval(() => {
+          if (index >= snapshots.length - 1) stop();
+          else next();
+        }, 1100);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.target.matches('button, input, textarea')) return;
+        if (event.key === 'ArrowRight' || event.key === ' ') { event.preventDefault(); next(); }
+        if (event.key === 'ArrowLeft') { event.preventDefault(); stop(); index = Math.max(0, index - 1); render(); }
+      });
+
+      render();
+    </script>
+  </body>
+</html>

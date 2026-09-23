@@ -288,6 +288,17 @@ private void inorder(TreeNode root, List<Integer> result) {
 
 这道题是遍历基础，也是 BST 题目的基础。
 
+#### 中序遍历递归图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=94"
+  width="100%"
+  height="760"
+  title="二叉树中序遍历递归图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
+
 ---
 
 ### 104. 二叉树的最大深度
@@ -316,6 +327,17 @@ private int dfs(TreeNode root) {
 ```text
 当前高度 = max(左高度, 右高度) + 1
 ```
+
+#### 后序计算高度图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=104"
+  width="100%"
+  height="760"
+  title="二叉树最大深度图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -347,6 +369,17 @@ public TreeNode invertTree(TreeNode root) {
 ```
 
 交换之后递归的是新的 root.left 和 root.right。
+
+#### 递归翻转指针图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=226"
+  width="100%"
+  height="760"
+  title="翻转二叉树指针交换图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -384,6 +417,17 @@ left == right 的含义：
 
 - 两个都是 null：对称
 - 一个是 null：不对称
+
+#### 镜像节点配对图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=101"
+  width="100%"
+  height="760"
+  title="对称二叉树镜像配对图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -429,6 +473,17 @@ class Solution {
 ```
 
 直径按边数计算，所以叶子的高度是 0。
+
+#### 后序计算直径图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=543"
+  width="100%"
+  height="760"
+  title="二叉树直径后序图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -477,6 +532,17 @@ int size = queue.size();
 
 它把当前层和下一层分开。当前层遍历时，新加入队列的节点属于下一层，不能在这一轮处理。
 
+#### 队列分层图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=102"
+  width="100%"
+  height="760"
+  title="二叉树层序遍历队列图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
+
 ---
 
 ### 108. 将有序数组转换为平衡 BST
@@ -508,6 +574,17 @@ private TreeNode build(int[] nums, int left, int right) {
 ```text
 中点作为根，左区间构造左子树，右区间构造右子树。
 ```
+
+#### 区间分治图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=108"
+  width="100%"
+  height="760"
+  title="有序数组构造平衡二叉搜索树图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -544,6 +621,17 @@ private boolean check(TreeNode root, long low, long high) {
 ```
 
 BST 通常要求严格不等，因此重复值也不合法。
+
+#### 上下界传播图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=98"
+  width="100%"
+  height="760"
+  title="验证二叉搜索树上下界图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -592,6 +680,17 @@ class Solution {
 
 Java 中 int 是值传递，所以不能指望递归参数中的 k 自动改变外层变量。这里使用成员变量 count。
 
+#### 中序计数图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=230"
+  width="100%"
+  height="760"
+  title="BST 第 K 小元素中序计数图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
+
 ---
 
 ### 199. 二叉树的右视图
@@ -631,6 +730,17 @@ private void dfs(TreeNode root, int depth, List<Integer> result) {
 每层第一次遇到的节点，就是最右侧节点。
 ```
 
+#### 右优先 DFS 图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=199"
+  width="100%"
+  height="760"
+  title="二叉树右视图右优先 DFS 图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
+
 ---
 
 ### 114. 二叉树展开为链表
@@ -669,6 +779,17 @@ public void flatten(TreeNode root) {
 ```
 
 覆盖 root.right 前必须先保存原来的右子树。
+
+#### 递归回溯与指针重连图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/flatten-tree.html?v=3"
+  width="100%"
+  height="900"
+  title="二叉树展开为链表递归图解"
+  loading="eager"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -711,6 +832,17 @@ class Solution {
 ```text
 前序找根，中序切左右，递归构造。
 ```
+
+#### 前序取根、中序分区图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/construct-tree.html?v=1"
+  width="100%"
+  height="900"
+  title="从前序与中序遍历序列构造二叉树图解"
+  loading="eager"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -768,6 +900,17 @@ class Solution {
 离开节点：撤销前缀和
 ```
 
+#### 前缀和与回溯图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=437"
+  width="100%"
+  height="760"
+  title="路径总和 III 前缀和回溯图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
+
 ---
 
 ### 236. 二叉树的最近公共祖先
@@ -805,6 +948,17 @@ public TreeNode lowestCommonAncestor(TreeNode root,
 只有一边找到：返回那一边
 两边都没找到：返回 null
 ```
+
+#### 最近公共祖先返回值图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=236"
+  width="100%"
+  height="760"
+  title="二叉树最近公共祖先后序图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 
@@ -854,6 +1008,17 @@ class Solution {
 ```text
 因为整棵树可能全部是负数，不能初始化为 0。
 ```
+
+#### 单边贡献与完整路径图解
+
+<iframe
+  src="http://127.0.0.1:8765/notes/algorithms/trees/tree-visualizer.html?problem=124"
+  width="100%"
+  height="760"
+  title="二叉树最大路径和后序图解"
+  loading="lazy"
+  style="border: 0; border-radius: 16px;">
+</iframe>
 
 ---
 

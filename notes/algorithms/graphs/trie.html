@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>208 Trie</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --ink: light-dark(#3f4248, #e7e9ed);
+      --muted: light-dark(#7a7f88, #aeb4bf);
+      --line: light-dark(#e5e7eb, #363b45);
+      --soft: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 5%));
+      --ready: light-dark(#dbe9f5, #30475d);
+      --word: light-dark(#d8eadb, #315541);
+      --current: light-dark(#f4d6a6, #765329);
+      --missing: light-dark(#f3d4d4, #6b3434);
+      --accent: light-dark(#55799f, #8fb4dd);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+    }
+
+    html { background: transparent; }
+    body {
+      margin: 0;
+      padding: 8px 3px 18px;
+      color: var(--ink);
+      background: transparent;
+    }
+    main {
+      max-width: 820px;
+      margin: auto;
+      padding: 2px 0 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 21px; font-weight: 500; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    button {
+      min-width: 78px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--ink);
+      background: transparent;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); background: var(--soft); }
+    button.primary { border-color: var(--accent); color: var(--accent); }
+    button:focus-visible { outline: 3px solid #ffb000; outline-offset: 2px; }
+    .step { margin-left: auto; align-self: center; color: var(--muted); font-size: 12px; }
+    .trie {
+      margin: 16px auto 8px;
+      padding: 5px 0;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+    }
+    svg { display: block; width: 100%; height: auto; }
+    .edge { stroke: var(--line); stroke-width: 2; }
+    .node circle { fill: transparent; stroke: var(--line); stroke-width: 2; }
+    .node text { fill: var(--ink); font-family: inherit; text-anchor: middle; }
+    .node .letter { font-size: 18px; font-weight: 500; }
+    .node .word { fill: var(--muted); font-size: 10px; }
+    .node.active circle { fill: var(--ready); stroke: var(--accent); }
+    .node.current circle { fill: var(--current); stroke: var(--accent); stroke-width: 3; }
+    .node.word-end circle { fill: var(--word); stroke: var(--word); }
+    .node.missing circle { fill: var(--missing); stroke: var(--missing); stroke-dasharray: 5 4; }
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .summary strong { color: var(--ink); }
+    .status {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: var(--ink);
+      font-size: 13px;
+      text-align: center;
+    }
+    .code {
+      margin: 12px auto 0;
+      max-width: 620px;
+      padding: 9px 12px;
+      border-left: 3px solid var(--accent);
+      background: var(--soft);
+      color: var(--muted);
+      font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .legend { margin-top: 10px; color: var(--muted); font-size: 12px; text-align: center; }
+    @media (max-width: 520px) {
+      .step { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<main aria-labelledby="title">
+  <h2 id="title">208. Trie：字符沿路径逐个插入</h2>
+  <p class="subtitle">先插入 cat 和 car，再搜索 cap，观察前缀存在但完整单词不存在的区别。</p>
+  <div class="controls" aria-label="动画控制">
+    <button id="prev" type="button">← 上一步</button>
+    <button id="play" class="primary" type="button">▶ 播放</button>
+    <button id="next" type="button">下一步 →</button>
+    <button id="reset" type="button">↺ 重置</button>
+    <span id="step" class="step" aria-live="polite"></span>
+  </div>
+  <div class="trie">
+    <svg viewBox="0 0 700 310" role="img" aria-label="Trie 前缀树">
+      <g id="edges"></g>
+      <g id="nodes"></g>
+    </svg>
+  </div>
+  <div class="summary">
+    <span>操作：<strong id="operation">—</strong></span>
+    <span>当前路径：<strong id="path">root</strong></span>
+    <span>末尾标记：<strong id="word">—</strong></span>
+  </div>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+  <div id="code" class="code"></div>
+  <div class="legend">蓝色：当前路径　绿色：isWord = true　橙色：正在访问　红色虚线：不存在的字符</div>
+</main>
+<script>
+  const definitions = [
+    { id: "root", label: "root", x: 350, y: 38, parent: null },
+    { id: "c", label: "c", x: 270, y: 112, parent: "root" },
+    { id: "ca", label: "a", x: 270, y: 190, parent: "c" },
+    { id: "cat", label: "t", x: 190, y: 268, parent: "ca" },
+    { id: "car", label: "r", x: 350, y: 268, parent: "ca" },
+    { id: "cap", label: "p", x: 510, y: 268, parent: "ca" }
+  ];
+
+  const steps = [
+    {
+      created: [],
+      ends: [],
+      active: ["root"],
+      missing: null,
+      operation: "空 Trie",
+      path: "root",
+      word: "—",
+      message: "只有根节点，根节点本身不代表任何单词。",
+      code: "Node current = root;"
+    },
+    {
+      created: [],
+      ends: [],
+      active: ["root"],
+      missing: null,
+      operation: "insert(\"cat\")",
+      path: "root → c",
+      word: "—",
+      message: "读取第一个字符 c：root 下面还没有 c。",
+      code: "if (current.children[index] == null) 创建新节点;"
+    },
+    {
+      created: ["c"],
+      ends: [],
+      active: ["root", "c"],
+      missing: null,
+      operation: "insert(\"cat\")",
+      path: "root → c → a",
+      word: "—",
+      message: "创建 c 节点，继续处理下一个字符 a。",
+      code: "current = current.children[index];"
+    },
+    {
+      created: ["c", "ca"],
+      ends: [],
+      active: ["root", "c", "ca"],
+      missing: null,
+      operation: "insert(\"cat\")",
+      path: "root → c → a → t",
+      word: "—",
+      message: "创建 a 节点，继续处理最后一个字符 t。",
+      code: "current = current.children[index];"
+    },
+    {
+      created: ["c", "ca", "cat"],
+      ends: [],
+      active: ["root", "c", "ca", "cat"],
+      missing: null,
+      operation: "insert(\"cat\")",
+      path: "root → c → a → t",
+      word: "—",
+      message: "创建 t 节点；路径完成，但还要设置 isWord。",
+      code: "current = current.children[index];"
+    },
+    {
+      created: ["c", "ca", "cat"],
+      ends: ["cat"],
+      active: ["root", "c", "ca", "cat"],
+      missing: null,
+      operation: "insert(\"cat\")",
+      path: "root → c → a → t",
+      word: "cat = true",
+      message: "cat 的最后一个节点标记 isWord = true。",
+      code: "current.isWord = true;"
+    },
+    {
+      created: ["c", "ca", "cat"],
+      ends: ["cat"],
+      active: ["root", "c", "ca"],
+      missing: null,
+      operation: "insert(\"car\")",
+      path: "root → c → a → r",
+      word: "cat = true",
+      message: "插入 car：c 和 a 已存在，直接复用这段公共前缀。",
+      code: "已有节点不创建，直接 current = current.children[index];"
+    },
+    {
+      created: ["c", "ca", "cat", "car"],
+      ends: ["cat"],
+      active: ["root", "c", "ca", "car"],
+      missing: null,
+      operation: "insert(\"car\")",
+      path: "root → c → a → r",
+      word: "cat = true",
+      message: "创建 r 节点，car 的字符路径已经完成。",
+      code: "if (current.children[index] == null) 创建 r 节点;"
+    },
+    {
+      created: ["c", "ca", "cat", "car"],
+      ends: ["cat", "car"],
+      active: ["root", "c", "ca", "car"],
+      missing: null,
+      operation: "insert(\"car\")",
+      path: "root → c → a → r",
+      word: "cat = true，car = true",
+      message: "把 car 的最后一个节点也标记为完整单词。",
+      code: "current.isWord = true;"
+    },
+    {
+      created: ["c", "ca", "cat", "car"],
+      ends: ["cat", "car"],
+      active: ["root", "c", "ca"],
+      missing: "cap",
+      operation: "search(\"cap\")",
+      path: "root → c → a → p",
+      word: "未找到 cap",
+      message: "c 和 a 这段前缀存在，但 p 节点不存在，所以 search(\"cap\") 返回 false。",
+      code: "找不到 current.children[index]，立即返回 false;"
+    }
+  ];
+
+  let index = 0;
+  let timer = null;
+  const edgeLayer = document.querySelector("#edges");
+  const nodeLayer = document.querySelector("#nodes");
+  const stepText = document.querySelector("#step");
+  const operationText = document.querySelector("#operation");
+  const pathText = document.querySelector("#path");
+  const wordText = document.querySelector("#word");
+  const statusText = document.querySelector("#status");
+  const codeText = document.querySelector("#code");
+  const playButton = document.querySelector("#play");
+
+  function visibleIds(state) {
+    const ids = ["root"].concat(state.created);
+    if (state.missing) {
+      ids.push(state.missing);
+    }
+    return ids;
+  }
+
+  function findDefinition(id) {
+    return definitions.find(function(item) { return item.id === id; });
+  }
+
+  function render() {
+    const state = steps[index];
+    const visible = visibleIds(state);
+    edgeLayer.innerHTML = "";
+    nodeLayer.innerHTML = "";
+
+    visible.forEach(function(id) {
+      const def = findDefinition(id);
+      if (def && def.parent && visible.indexOf(def.parent) !== -1) {
+        const parent = findDefinition(def.parent);
+        edgeLayer.innerHTML += '<line class="edge" x1="' + parent.x
+          + '" y1="' + parent.y + '" x2="' + def.x
+          + '" y2="' + def.y + '"></line>';
+      }
+    });
+
+    visible.forEach(function(id) {
+      const def = findDefinition(id);
+      if (!def) {
+        return;
+      }
+
+      const classes = ["node"];
+      if (state.active.indexOf(id) !== -1) {
+        classes.push("active");
+      }
+      if (state.active[state.active.length - 1] === id) {
+        classes.push("current");
+      }
+      if (state.ends.indexOf(id) !== -1) {
+        classes.push("word-end");
+      }
+      if (state.missing === id) {
+        classes.push("missing");
+      }
+
+      let wordMark = "";
+      if (state.ends.indexOf(id) !== -1) {
+        wordMark = '<text class="word" x="' + def.x + '" y="' + (def.y + 35) + '">isWord</text>';
+      }
+      nodeLayer.innerHTML += '<g class="' + classes.join(" ") + '">'
+        + '<circle cx="' + def.x + '" cy="' + def.y + '" r="27"></circle>'
+        + '<text class="letter" x="' + def.x + '" y="' + (def.y + 6) + '">' + def.label + '</text>'
+        + wordMark
+        + '</g>';
+    });
+
+    stepText.textContent = "步骤 " + (index + 1) + " / " + steps.length;
+    operationText.textContent = state.operation;
+    pathText.textContent = state.path;
+    wordText.textContent = state.word;
+    statusText.textContent = state.message;
+    codeText.textContent = state.code;
+    document.querySelector("#prev").disabled = index === 0;
+    document.querySelector("#next").disabled = index === steps.length - 1;
+  }
+
+  function stop() {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+    playButton.textContent = "▶ 播放";
+  }
+
+  function next() {
+    if (index < steps.length - 1) {
+      index++;
+      render();
+    } else {
+      stop();
+    }
+  }
+
+  document.querySelector("#prev").addEventListener("click", function() {
+    stop();
+    if (index > 0) {
+      index--;
+      render();
+    }
+  });
+  document.querySelector("#next").addEventListener("click", next);
+  document.querySelector("#reset").addEventListener("click", function() {
+    stop();
+    index = 0;
+    render();
+  });
+  playButton.addEventListener("click", function() {
+    if (timer !== null) {
+      stop();
+      return;
+    }
+    if (index === steps.length - 1) {
+      index = 0;
+      render();
+    }
+    playButton.textContent = "Ⅱ 暂停";
+    timer = setInterval(next, 1050);
+  });
+
+  render();
+</script>
+</body>
+</html>
